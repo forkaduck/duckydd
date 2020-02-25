@@ -1,0 +1,9 @@
+[Unit]
+Description=Rubberducky protector
+
+[Service]
+ExecStart=/usr/bin/duckydd -c /etc/duckydd/duckydd.conf
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
