@@ -68,6 +68,6 @@ to unlock it.
 ## Uninstall:
 ```
 cd bin
-xargs rm < install_manifest.txt
+sudo xargs rm < install_manifest.txt
 sudo rm -rf /etc/duckydd
 ```
