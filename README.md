@@ -4,6 +4,8 @@ This is a daemon which should protect the user from pretty much every HID inject
 
 ## Install:
 ```
+git clone --recurse-submodules -j8 https://github.com/0xDEADC0DEx/duckydd
+cd duckydd
 mkdir bin
 cd bin
 cmake ..
