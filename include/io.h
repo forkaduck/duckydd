@@ -1,43 +1,50 @@
 #ifndef STUFF_IO_H
 #define STUFF_IO_H
 
-bool daemonize;
+#include <time.h>
+#include <stdbool.h>
 
-#define LOG(fd, format, args...) _logger(fd, __func__, format, ##args) // print function name
-//#define LOG(fd, format, args...) _logger(fd, NULL, format, ##args) // disable
+#include "mbuffer.h"
 
 // external buffers
-#define MAX_BUFFER_SIZE 400
-#define MAX_PATH_SIZE 200
+#define MAX_SIZE_PATH 200
 
 // internal buffers
-#define MAX_FUNCTION_NAME_SIZE 50
-#define MAX_FORMAT_STRING_NAME 100
+#define MAX_SIZE_FUNCTION_NAME 50
+#define MAX_SIZE_FORMAT_STRING 100
+
+#define LOG(loglvl, format, args...) _logger(loglvl, __func__, format, ##args) // print function name
+//#define LOG(loglvl, format, args...) _logger(loglvl, NULL, format, ##args) // disable
+#define ERR(function) _logger(-1, __func__, "%s has failed (%d) -> %s\n", function, errno, strerror(errno))
 
 // holds data read from the config file (mainly used by readconfig)
-struct config_data {
-    struct timespec maxtime;
-    long int maxcount;
+struct configInfo {
+        struct timespec maxtime;
+        long int maxcount;
 
-    size_t *blacklist;
-    size_t blacklistsize;
+        char logpath[MAX_SIZE_PATH];
 
-    int configfd;
+        // kbd
+        struct managedBuffer blacklist;
+        bool logkeys;
+
+        int configfd;
 };
 
 // holds data that was parsed out by handleargs
-struct arg_data {
-    char configpath[MAX_PATH_SIZE];
-    char logpath[MAX_PATH_SIZE];
+struct argInfo {
+        char configpath[MAX_SIZE_PATH];
 };
 
-int readconfig(const char path[], struct config_data *data);
-void handleargs(int argc, char *argv[], struct arg_data *data);
+int readconfig ( const char path[], struct configInfo *data );
+int handleargs ( int argc, char *argv[], struct argInfo *data );
 
 // internal logger function
-void _logger(FILE *fd, const char func[], const char format[], ...);
+void _logger ( short loglevel, const char func[], const char format[], ... );
 
 // better strcmp implementations
-int strcmp_ss(const char str1[], const char str2[]);
-int strncmp_ss(const char str1[], const char str2[], size_t length);
+int strcmp_ss ( const char str1[], const char str2[] );
+int strncmp_ss ( const char str1[], const char str2[], size_t length );
+
+const char *find_file ( const char *input );
 #endif

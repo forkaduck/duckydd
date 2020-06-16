@@ -24,10 +24,13 @@ then the daemon will simply __ignore__ it.
 
 The config file format is pretty simple.
 
-\<parameter> \<option>[,\<option>][,...];
+\<parameter> \<option>
 
 ## Example config entries:
-`blacklist 29,97,56,100;`
+`blacklist 29`
+`blacklist 97`
+`blacklist 56`
+`blacklist 100`
 
 With this option you can configure which keys will lock the keyboard.
 
@@ -38,14 +41,14 @@ The script will search for the header using locate and then list
 all of the key macros and their keycode.
 
 
-`maxtime 10s 0ns;`
+`maxtime 10s 0ns`
 
 This will set the maximum time after which the device will be
 removed from the watchlist. After that time period the daemon
 will simply ignore all events that are generated from that event file.
 
 
-`maxscore 0;`
+`maxscore 0`
 
 The so called score of an event file is an internal variable which depicts
 how dangerous the event file is. If the daemon increments the score over the set maxscore
@@ -64,6 +67,27 @@ as a keyboard and a serial com port.
 
 After the keyboard has been locked you have to replug it
 to unlock it.
+
+`keylogging 1`
+
+Enables keylogging of potential attacks
+
+__Note:__ The keylogger logs all keypresses that are read from the event file
+until the specific keyboard times out. The keys pressed are then written to a
+file called key.log into the path which the logpath variable is set to.
+
+`logpath /`
+
+Sets the path where every log file is saved in.
+
+If the process is given the -d flag (daemonize) then it will also write
+it's log messages to a file which is called out.log in the logpath directory.
+
+Otherwise it will just use the directory for the keylog.
+
+__Note:__ You have to set a full path because the daemon has
+to be started as root. Currently the parser does not expand the string
+using environment variables.
 
 ## Uninstall:
 ```
