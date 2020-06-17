@@ -28,8 +28,11 @@ The config file format is pretty simple.
 
 ## Example config entries:
 `blacklist 29`
+
 `blacklist 97`
+
 `blacklist 56`
+
 `blacklist 100`
 
 With this option you can configure which keys will lock the keyboard.
