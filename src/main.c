@@ -9,8 +9,8 @@
  * 		* write unit tests with cmocka?
  *
  * TODO BUGS:
- *      * sometimes when grabbing the keyboard the last key that was pressed can get stuck
- *          and gets repeated until the devnode is removed
+ * 		* cant init keylogging when run as a daemon from systemd
+ * 			(daemon doesnt have the right to access the x11 keyboard)
  * */
 
 
@@ -42,7 +42,6 @@
 #define PREFIX char
 #define T char
 #include "mbuffertemplate.h"
-
 
 static int deinit_device ( struct device *device, struct configInfo *config, struct keyboardInfo *kbd, const int epollfd )
 {
@@ -304,6 +303,7 @@ error_exit:
         return err;
 }
 
+
 int main ( int argc, char *argv[] )
 {
         size_t i;
@@ -431,7 +431,7 @@ int main ( int argc, char *argv[] )
                                         } else {
                                                 // handle keyboard grabbing
                                                 if ( event.type == EV_KEY ) {
-                                                        if ( device[fd].score >= config.maxcount ) {
+                                                        if ( device[fd].score >= config.maxcount) {
                                                                 size_t k;
                                                                 bool handle = false;
 
@@ -440,10 +440,10 @@ int main ( int argc, char *argv[] )
                                                                                 handle = true;
                                                                         }
                                                                 }
-
-                                                                if ( handle ) {
-                                                                        int s = 1;
-                                                                        if ( ioctl ( fd, EVIOCGRAB, &s ) ) {
+                                                                
+																LOG(1, "fd=%d event.type=%d event.code=%d event.value=%d\n",fd, event.type, event.code, event.value);
+                                                                if ( handle && event.value == 0 ) {
+                                                                        if ( ioctl ( fd, EVIOCGRAB, 1 ) ) {
                                                                                 ERR ( "ioctl" );
                                                                         }
                                                                         device[fd].score = -1;
@@ -456,8 +456,10 @@ int main ( int argc, char *argv[] )
                                                                         LOG ( 0, "logkey failed!\n" );
                                                                 }
                                                         }
-
                                                 }
+                                                else if ( event.type == SYN_DROPPED ) {
+														LOG(-1, "Sync dropped! Eventhandler not fast enough!\n");
+												}
 
 
                                                 // handle timeout

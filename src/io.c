@@ -131,7 +131,7 @@ int readconfig ( const char path[], struct configInfo *data )
 
                         if ( fcntl ( data->configfd, F_SETLK, &lock ) ) { // try to lock the file
                                 if ( errno == EACCES || errno == EAGAIN ) {
-                                        LOG ( -1, "Config file locked! Another instance is already running!\n" );
+                                        LOG ( -1, "Another instance is probably running!\n" );
                                 }
                                 ERR ( "fcntl" );
                                 err = -2;
