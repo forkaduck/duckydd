@@ -98,3 +98,10 @@ cd bin
 sudo xargs rm < install_manifest.txt
 sudo rm -rf /etc/duckydd
 ```
+
+## Known issues:
+If you get the message "No protocol specified" when starting the daemon as a service
+then you need to add the user root to the list of trusted users of the x server.
+To do this issue the following command:
+
+`xhost local:root`

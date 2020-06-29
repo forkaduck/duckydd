@@ -2,6 +2,7 @@
 Description=Rubberducky protector
 
 [Service]
+Environment="DISPLAY=:0"
 ExecStart=/usr/bin/duckydd -c /etc/duckydd/duckydd.conf
 ExecReload=/bin/kill -HUP $MAINPID
 

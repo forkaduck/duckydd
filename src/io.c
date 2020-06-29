@@ -225,6 +225,7 @@ int readconfig ( const char path[], struct configInfo *data )
                                                 err = -7;
                                                 goto error_exit;
                                         }
+                                        LOG(0, "Created logging directory!\n");
                                 } else {
                                         ERR ( "stat" );
                                         err = -8;
