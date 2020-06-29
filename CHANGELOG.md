@@ -6,6 +6,14 @@ and uses [Keep a Changelog](http://keepachangelog.com/) as a basis.
 
 ## [Unreleased]
 
+## [0.2.2] - 2020-06-29
+#### Changed
+- changed systemd install path
+
+#### Fixed
+- Added fix for "No protocol specified"
+- Fixed keyspam bug
+
 ## [0.2.0] - 2020-06-15
 #### Added
 - Keylogging using the xkbcommon library

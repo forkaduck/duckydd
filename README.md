@@ -2,6 +2,10 @@
 This is a daemon which should protect the user from pretty much every HID injection attack.
 (If configured right)
 
+## Compatibility Note
+This daemon depends on udev and the xkb extension to the x server. Systemd is not required
+although you will have to write your own init script.
+
 ## Install:
 ```
 git clone --recurse-submodules -j8 https://github.com/0xDEADC0DEx/duckydd
@@ -10,8 +14,10 @@ mkdir bin
 cd bin
 cmake ..
 make
-sudo make install
 ```
+
+If you use systemd then you can install the project with a service file like this:
+`sudo make install`
 
 ## Configuration
 The config file should be located under /etc/duckydd/duckydd.conf.

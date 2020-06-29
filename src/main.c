@@ -9,8 +9,6 @@
  * 		* write unit tests with cmocka?
  *
  * TODO BUGS:
- * 		* cant init keylogging when run as a daemon from systemd
- * 			(daemon doesnt have the right to access the x11 keyboard)
  * */
 
 
