@@ -19,6 +19,6 @@ struct keyboardInfo {
 int init_keylogging ( const char input[], struct keyboardInfo *kbd, struct configInfo *config );
 int deinit_keylogging ( struct keyboardInfo *kbd );
 
-int logkey ( struct keyboardInfo *kbd, struct device* device, struct input_event event );
+int logkey ( struct keyboardInfo *kbd, struct deviceInfo* device, struct input_event event );
 
 #endif

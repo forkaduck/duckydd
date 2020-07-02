@@ -9,10 +9,10 @@ struct managedBuffer {
         size_t typesize;
 };
 
-void init_mbuffer ( struct managedBuffer *buffer, size_t typesize );
+void m_init ( struct managedBuffer *buffer, size_t typesize );
 
-void free_mbuffer ( struct managedBuffer *buffer );
+void m_free ( struct managedBuffer *buffer );
 
-int realloc_mbuffer ( struct managedBuffer *buffer, size_t size );
+int m_realloc ( struct managedBuffer *buffer, size_t size );
 
 #endif

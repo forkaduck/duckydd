@@ -39,7 +39,7 @@ add_executable(duckydd ${SOURCES})
 set (CMAKE_C_FLAGS_DEBUG "-g3 -lefence")
 set (CMAKE_C_FLAGS_RELEASE "-O3")
 
-string (APPEND CMAKE_C_FLAGS "-Wall -fstack-protector-strong")
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -fstack-protector-strong")
 
 ExternalProject_Add(sslib
 	PREFIX ${CMAKE_SOURCE_DIR}/safestringlib

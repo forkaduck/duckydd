@@ -110,7 +110,7 @@ int readconfig ( const char path[], struct configInfo *config )
 
         config->logpath[0] = '\0';
 
-        init_mbuffer ( &config->blacklist, sizeof ( long int ) );
+        m_init ( &config->blacklist, sizeof ( long int ) );
         config->logkeys = false;
 
         if ( config->configfd == -1 ) {
@@ -139,7 +139,7 @@ int readconfig ( const char path[], struct configInfo *config )
                         }
                 }
         } else {
-                free_mbuffer ( &config->blacklist );
+                m_free ( &config->blacklist );
                 lseek ( config->configfd, 0, SEEK_SET );
         }
 
@@ -204,7 +204,7 @@ int readconfig ( const char path[], struct configInfo *config )
 
                         number = parse_longlong ( &end[1], &end );
                         if ( number <= KEY_MAX ) {
-                                if ( append_mbuffer_member_long_int ( &config->blacklist, number ) ) {
+                                if ( m_append_member_long_int ( &config->blacklist, number ) ) {
                                         err = -6;
                                         goto error_exit;
                                 }
@@ -259,7 +259,7 @@ error_exit:
         if ( close ( config->configfd ) ) {
                 ERR ( "close" );
         }
-        free_mbuffer ( &config->blacklist );
+        m_free ( &config->blacklist );
         free ( buffer );
         return err;
 }
@@ -285,7 +285,7 @@ int handleargs ( int argc, char *argv[], struct argInfo *data )
                                 break;
 
                         case 'v':
-								if (loglvl > 2) {
+								if (loglvl < 2) {
         	                        loglvl += 1;
 								} else {
 									LOG(0, "Can't increment loglevel any more!\n");

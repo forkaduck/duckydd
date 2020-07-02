@@ -13,8 +13,8 @@
 #define MAX_SIZE_FUNCTION_NAME 50
 #define MAX_SIZE_FORMAT_STRING 100
 
-//#define LOG(loglvl, format, args...) _logger(loglvl, __func__, format, ##args) // print function name
-#define LOG(loglvl, format, args...) _logger(loglvl, NULL, format, ##args) // disable
+#define LOG(loglvl, format, args...) _logger(loglvl, __func__, format, ##args) // print function name
+//#define LOG(loglvl, format, args...) _logger(loglvl, NULL, format, ##args) // disable
 #define ERR(function) _logger(-1, __func__, "%s has failed (%d) -> %s\n", function, errno, strerror(errno))
 
 // holds data read from the config file (mainly used by readconfig)

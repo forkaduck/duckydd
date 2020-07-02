@@ -19,7 +19,7 @@ make
 If you use systemd then you can install the project with a service file like this:
 `sudo make install`
 
-## Configuration
+## Configuration:
 The config file should be located under /etc/duckydd/duckydd.conf.
 
 __Note:__ The standard config the daemon is shipped with, should

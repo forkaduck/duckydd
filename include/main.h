@@ -25,7 +25,7 @@ struct udevInfo {
         struct udev_monitor *mon;
 };
 
-struct device {
+struct deviceInfo {
         char openfd[MAX_SIZE_PATH];
         int fd;
 

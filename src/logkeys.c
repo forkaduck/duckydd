@@ -113,7 +113,7 @@ enum {
         KEY_STATE_REPEAT = 2,
 };
 
-int logkey ( struct keyboardInfo *kbd, struct device* device, struct input_event event )
+int logkey ( struct keyboardInfo *kbd, struct deviceInfo* device, struct input_event event )
 {
         xkb_keycode_t keycode = event.code + 8;
 
@@ -136,7 +136,7 @@ int logkey ( struct keyboardInfo *kbd, struct device* device, struct input_event
 
                         xkb_state_key_get_utf8 ( device->state, keycode, buffer, size );
 
-                        if ( append_mbuffer_array_char ( &device->devlog, buffer, size - 1 ) ) { // dont copy \0
+                        if ( m_append_array_char ( &device->devlog, buffer, size - 1 ) ) { // dont copy \0
                                 LOG ( -1, "append_mbuffer_array_char failed!\n" );
                                 return -2;
                         }
