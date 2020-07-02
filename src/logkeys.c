@@ -27,26 +27,25 @@ int init_keylogging ( const char input[], struct keyboardInfo *kbd, struct confi
         int err = 0;
         memset_s ( kbd, sizeof ( kbd ), 0 );
 
+        kbd->ctx = xkb_context_new ( XKB_CONTEXT_NO_FLAGS );
+        if ( !kbd->ctx ) {
+                LOG ( -1, "xkb_context_new failed!\n" );
+                err = -1;
+                goto error_exit;
+        }
+
         kbd->con = xcb_connect ( input, NULL );
         if ( kbd->con == NULL ) {
                 LOG ( -1, "xcb_connect failed!\n" );
-                err = -1;
+                err = -2;
                 goto error_exit;
         }
 
         if ( xcb_connection_has_error ( kbd->con ) ) {
                 LOG ( -1, "xcb_connection_has_error failed!\n" );
-                err = -2;
-                goto error_exit;
-        }
-
-        kbd->ctx = xkb_context_new ( XKB_CONTEXT_NO_FLAGS );
-        if ( !kbd->ctx ) {
-                LOG ( -1, "xkb_context_new failed!\n" );
                 err = -3;
                 goto error_exit;
         }
-
 
         {
                 uint16_t major_xkb, minor_xkb;

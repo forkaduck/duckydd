@@ -22,12 +22,12 @@ set (DAEMON_CONF_DIR "/etc/duckydd")
 set (SYSTEMD_UNIT_DIR "/usr/lib/systemd/system/")
 
 # The version numbering
-set (${PROJECT_NAME}_VERSION_MAJOR 0)
-set (${PROJECT_NAME}_VERSION_MINOR 2)
-set (${PROJECT_NAME}_PATCH_LEVEL 2)
+set (VERSION_MAJOR 0)
+set (VERSION_MINOR 2)
+set (PATCH_LEVEL 2)
 
-set (${PROJECT_NAME}_VERSION
-"${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}")
+set (VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${PATCH_LEVEL}")
+add_compile_definitions(VER="${VERSION}")
 
 # set source and include directories
 include_directories (include)

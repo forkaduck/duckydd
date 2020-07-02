@@ -94,7 +94,7 @@ static size_t readfile ( int fd, char **output )
         return size;
 }
 
-int readconfig ( const char path[], struct configInfo *data )
+int readconfig ( const char path[], struct configInfo *config )
 {
         int err = 0;
         size_t size;
@@ -104,18 +104,18 @@ int readconfig ( const char path[], struct configInfo *data )
         char *buffer = NULL;
         char *current = NULL;
 
-        data->maxtime.tv_sec = 0;
-        data->maxtime.tv_nsec = 0;
-        data->maxcount = -1;
+        config->maxtime.tv_sec = 0;
+        config->maxtime.tv_nsec = 0;
+        config->maxcount = -1;
 
-        data->logpath[0] = '\0';
+        config->logpath[0] = '\0';
 
-        init_mbuffer ( &data->blacklist, sizeof ( long int ) );
-        data->logkeys = false;
+        init_mbuffer ( &config->blacklist, sizeof ( long int ) );
+        config->logkeys = false;
 
-        if ( data->configfd == -1 ) {
-                data->configfd = open ( path, O_RDWR ); // open the config
-                if ( data->configfd < 0 ) {
+        if ( config->configfd == -1 ) {
+                config->configfd = open ( path, O_RDWR ); // open the config
+                if ( config->configfd < 0 ) {
                         ERR ( "open" );
                         err = -1;
                         goto error_exit;
@@ -129,7 +129,7 @@ int readconfig ( const char path[], struct configInfo *data )
                         lock.l_start = 0;
                         lock.l_len = 0;
 
-                        if ( fcntl ( data->configfd, F_SETLK, &lock ) ) { // try to lock the file
+                        if ( fcntl ( config->configfd, F_SETLK, &lock ) ) { // try to lock the file
                                 if ( errno == EACCES || errno == EAGAIN ) {
                                         LOG ( -1, "Another instance is probably running!\n" );
                                 }
@@ -139,12 +139,12 @@ int readconfig ( const char path[], struct configInfo *data )
                         }
                 }
         } else {
-                free_mbuffer ( &data->blacklist );
-                lseek ( data->configfd, 0, SEEK_SET );
+                free_mbuffer ( &config->blacklist );
+                lseek ( config->configfd, 0, SEEK_SET );
         }
 
 
-        size = readfile ( data->configfd, &buffer );
+        size = readfile ( config->configfd, &buffer );
         if ( buffer == NULL ) {
                 LOG ( -1, "readfile failed\n" );
                 err = -3;
@@ -170,41 +170,41 @@ int readconfig ( const char path[], struct configInfo *data )
                 }
                 cleaninput ( current, next );
 
-                if ( strncmp_ss ( current, "maxtime", 7 ) == 0 && data->maxtime.tv_sec == 0 &&
-                                data->maxtime.tv_nsec == 0 ) {
+                if ( ! strncmp_ss ( current, "maxtime", 7 ) && config->maxtime.tv_sec == 0 &&
+                                config->maxtime.tv_nsec == 0 ) {
                         char *end = NULL;
 
-                        data->maxtime.tv_sec = parse_longlong ( &current[8], &end );
-                        data->maxtime.tv_nsec = parse_longlong ( &end[1], &end );
+                        config->maxtime.tv_sec = parse_longlong ( &current[8], &end );
+                        config->maxtime.tv_nsec = parse_longlong ( &end[1], &end );
 
-                        if ( data->maxtime.tv_sec < 0 || data->maxtime.tv_nsec < 0 ) {
+                        if ( config->maxtime.tv_sec < 0 || config->maxtime.tv_nsec < 0 ) {
                                 LOG ( -1, "The option of maxtime is malformed or out of range!\n" );
                                 err = -4;
                                 goto error_exit;
                         }
 
-                        LOG ( 1, "Maxtime set to %lds %ldns\n", data->maxtime.tv_sec,
-                              data->maxtime.tv_nsec );
+                        LOG ( 1, "Maxtime set to %lds %ldns\n", config->maxtime.tv_sec,
+                              config->maxtime.tv_nsec );
 
-                } else if ( strncmp_ss ( current, "maxscore", 8 ) == 0 && data->maxcount == -1 ) {
-                        data->maxcount = parse_longlong ( &current[9], NULL );
+                } else if ( ! strncmp_ss ( current, "maxscore", 8 ) && config->maxcount == -1 ) {
+                        config->maxcount = parse_longlong ( &current[9], NULL );
 
-                        if ( data->maxcount < 0 ) {
+                        if ( config->maxcount < 0 ) {
                                 LOG ( -1, "The option of maxscore is malformed or out of range!\n" );
                                 err = -5;
                                 goto error_exit;
                         }
 
-                        LOG ( 1, "Maxscore set to %ld\n", data->maxcount );
+                        LOG ( 1, "Maxscore set to %ld\n", config->maxcount );
 
-                } else if ( strncmp_ss ( current, "blacklist", 8 ) == 0 ) {
+                } else if ( ! strncmp_ss ( current, "blacklist", 8 ) ) {
                         char *end = &current[9];
 
                         long int number;
 
                         number = parse_longlong ( &end[1], &end );
                         if ( number <= KEY_MAX ) {
-                                if ( append_mbuffer_member_long_int ( &data->blacklist, number ) ) {
+                                if ( append_mbuffer_member_long_int ( &config->blacklist, number ) ) {
                                         err = -6;
                                         goto error_exit;
                                 }
@@ -214,18 +214,18 @@ int readconfig ( const char path[], struct configInfo *data )
                                 LOG ( 1, "%d is not a valid keyboard scancode!\n" );
                         }
 
-                } else if ( strncmp_ss ( current, "logpath", 7 ) == 0 ) {
-                        strcpy_s ( data->logpath, MAX_SIZE_PATH, &current[8] );
+                } else if ( ! strncmp_ss ( current, "logpath", 7 ) ) {
+                        strcpy_s ( config->logpath, MAX_SIZE_PATH, &current[8] );
 
                         struct stat st;
-                        if ( stat ( data->logpath, &st ) < 0 ) {
+                        if ( stat ( config->logpath, &st ) < 0 ) {
                                 if ( ENOENT == errno ) {
-                                        if ( mkdir ( data->logpath, 731 ) ) {
+                                        if ( mkdir ( config->logpath, 731 ) ) {
                                                 ERR ( "mkdir" );
                                                 err = -7;
                                                 goto error_exit;
                                         }
-                                        LOG(0, "Created logging directory!\n");
+                                        LOG ( 0, "Created logging directory!\n" );
                                 } else {
                                         ERR ( "stat" );
                                         err = -8;
@@ -234,7 +234,7 @@ int readconfig ( const char path[], struct configInfo *data )
 
                         } else {
                                 if ( S_ISDIR ( st.st_mode ) ) {
-                                        LOG ( 1, "Set %s as the path for logging!\n", data->logpath );
+                                        LOG ( 1, "Set %s as the path for logging!\n", config->logpath );
                                 } else {
                                         LOG ( 0, "Logpath does not point to a directory!\n" );
                                         err = -9;
@@ -242,9 +242,9 @@ int readconfig ( const char path[], struct configInfo *data )
                                 }
                         }
 
-                } else if ( strncmp_ss ( current, "keylogging", 10 ) == 0 ) {
+                } else if ( ! strncmp_ss ( current, "keylogging", 10 ) ) {
                         if ( parse_longlong ( &current[11], NULL ) == 1 ) {
-                                data->logkeys = true;
+                                config->logkeys = true;
                                 LOG ( 1, "Logging all potential attacks!\n" );
                         }
                 }
@@ -256,10 +256,10 @@ int readconfig ( const char path[], struct configInfo *data )
         return err;
 
 error_exit:
-        if ( close ( data->configfd ) ) {
+        if ( close ( config->configfd ) ) {
                 ERR ( "close" );
         }
-        free_mbuffer ( &data->blacklist );
+        free_mbuffer ( &config->blacklist );
         free ( buffer );
         return err;
 }
@@ -267,6 +267,8 @@ error_exit:
 int handleargs ( int argc, char *argv[], struct argInfo *data )
 {
         size_t i;
+		bool unrecognized = false;
+		bool help = false;
         data->configpath[0] = '\0';
 
         for ( i = 1; i < argc; i++ ) {
@@ -283,18 +285,40 @@ int handleargs ( int argc, char *argv[], struct argInfo *data )
                                 break;
 
                         case 'v':
-                                loglvl = 1;
+								if (loglvl > 2) {
+        	                        loglvl += 1;
+								} else {
+									LOG(0, "Can't increment loglevel any more!\n");
+								}
+                                break;
+
+                        case 'h':
+                                printf ("duckydd v%s\n"
+										"Usage: duckydd [Options]\n"
+										"\t\t-c [file]\tSpecify a config file location\n"
+										"\t\t-d\t\tDaemonize the process\n"
+										"\t\t-v\t\tIncrease loglevel\n"
+										"\t\t-h\t\tShow this help section\n\n"
+										"For config options please look at the README.md\n\n", VER );
+								help = true;
                                 break;
 
                         default:
-                                printf ( "%s is not a recognized option\n", argv[i] );
+                                LOG ( 0, "%s is not a recognized option. \n", argv[i] );
                                 break;
                         }
                 }
         }
 
-        if ( data->configpath[0] == '\0' ) {
-                printf ( "Please provide a config location!\n" );
+        if (unrecognized) {
+			LOG(0, "Try -h for a list of supported options\n");
+		}
+	
+		if (help) {
+				return -1;	
+		}
+        else if ( data->configpath[0] == '\0' ) {
+                LOG ( 0, "Please provide a config location!\n" );
                 return -1;
         }
         return 0;
@@ -325,11 +349,11 @@ void _logger ( short loglevel, const char func[], const char format[], ... )
 
                 if ( func != NULL ) {
                         sprintf ( appended, "[%c][%s] %s", prefix, func, format );
-                        vfprintf ( fd, appended, args );
                 } else {
                         sprintf ( appended, "[%c] %s", prefix, format );
-                        vfprintf ( fd, format, args );
                 }
+                vfprintf ( fd, appended, args );
+                
                 va_end ( args );
         }
 }

@@ -2,7 +2,7 @@
 This is a daemon which should protect the user from pretty much every HID injection attack.
 (If configured right)
 
-## Compatibility Note
+## Compatibility Note:
 This daemon depends on udev and the xkb extension to the x server. Systemd is not required
 although you will have to write your own init script.
 

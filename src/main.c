@@ -429,7 +429,7 @@ int main ( int argc, char *argv[] )
                                         } else {
                                                 // handle keyboard grabbing
                                                 if ( event.type == EV_KEY ) {
-                                                        if ( device[fd].score >= config.maxcount) {
+                                                        if ( device[fd].score >= config.maxcount ) {
                                                                 size_t k;
                                                                 bool handle = false;
 
@@ -438,8 +438,8 @@ int main ( int argc, char *argv[] )
                                                                                 handle = true;
                                                                         }
                                                                 }
-                                                                
-																LOG(1, "fd=%d event.type=%d event.code=%d event.value=%d\n",fd, event.type, event.code, event.value);
+
+                                                                LOG ( 1, "fd=%d event.type=%d event.code=%d event.value=%d\n",fd, event.type, event.code, event.value );
                                                                 if ( handle && event.value == 0 ) {
                                                                         if ( ioctl ( fd, EVIOCGRAB, 1 ) ) {
                                                                                 ERR ( "ioctl" );
@@ -454,10 +454,9 @@ int main ( int argc, char *argv[] )
                                                                         LOG ( 0, "logkey failed!\n" );
                                                                 }
                                                         }
+                                                } else if ( event.type == SYN_DROPPED ) {
+                                                        LOG ( -1, "Sync dropped! Eventhandler not fast enough!\n" );
                                                 }
-                                                else if ( event.type == SYN_DROPPED ) {
-														LOG(-1, "Sync dropped! Eventhandler not fast enough!\n");
-												}
 
 
                                                 // handle timeout
