@@ -17,7 +17,17 @@ make
 ```
 
 If you use systemd then you can install the project with a service file like this:
+
 `sudo make install`
+
+## Known issues:
+If you get the message "No protocol specified" when starting the daemon as a service
+then you need to add the user root to the list of trusted users of the x server. This
+needs to be done on boot but after the x server starts as the local user.
+To do this issue the following command:
+
+`xhost local:root`
+
 
 ## Configuration:
 The config file should be located under /etc/duckydd/duckydd.conf.
@@ -104,10 +114,3 @@ cd bin
 sudo xargs rm < install_manifest.txt
 sudo rm -rf /etc/duckydd
 ```
-
-## Known issues:
-If you get the message "No protocol specified" when starting the daemon as a service
-then you need to add the user root to the list of trusted users of the x server.
-To do this issue the following command:
-
-`xhost local:root`
