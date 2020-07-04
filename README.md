@@ -42,7 +42,7 @@ The config file format is pretty simple.
 
 \<parameter> \<option>
 
-## Example config entries:
+## Config entries:
 `blacklist 29`
 
 `blacklist 97`
@@ -107,6 +107,13 @@ Otherwise it will just use the directory for the keylog.
 __Note:__ You have to set a full path because the daemon has
 to be started as root. Currently the parser does not expand the string
 using environment variables.
+
+`usexkeymaps 1`
+
+Disable to use the kernel keytables which are set with the loadkeys program.
+At the moment this is an **experimental** feature and only works for ASCII characters.
+With it disabled you don't have to have the x server running and still be able to log
+attacks.
 
 ## Uninstall:
 ```

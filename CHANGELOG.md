@@ -7,6 +7,7 @@ and uses [Keep a Changelog](http://keepachangelog.com/) as a basis.
 ## [Unreleased]
 #### Added
 - help flag
+- keylogging via kernel keytable (experimental)
 
 ## [0.2.2] - 2020-06-29
 #### Changed

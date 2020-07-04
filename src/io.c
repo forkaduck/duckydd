@@ -112,6 +112,7 @@ int readconfig ( const char path[], struct configInfo *config )
 
         m_init ( &config->blacklist, sizeof ( long int ) );
         config->logkeys = false;
+		config->xkeymaps = false;
 
         if ( config->configfd == -1 ) {
                 config->configfd = open ( path, O_RDWR ); // open the config
@@ -247,7 +248,12 @@ int readconfig ( const char path[], struct configInfo *config )
                                 config->logkeys = true;
                                 LOG ( 1, "Logging all potential attacks!\n" );
                         }
-                }
+                } else if (! strncmp_ss (current, "usexkeymaps", 11)) {
+						if (parse_longlong(&current[12], NULL) == 1) {
+								config->xkeymaps = true;
+								LOG (1, "Using x server keymaps!\n");
+						}
+				}
 
                 current = &buffer[usedsize];
         }
@@ -324,6 +330,25 @@ int handleargs ( int argc, char *argv[], struct argInfo *data )
         return 0;
 }
 
+char * binexpand(uint8_t bin, size_t size) {
+		size_t k;
+		char *out;
+		
+		out = malloc(size * sizeof(char));
+		if(out == NULL) {
+				ERR("malloc");
+				return NULL;
+		}
+
+		for(k = 0; k < size; k++) {
+				if(bin & (0x1 << k)) {
+						out[size - k] = '1';
+				} else {
+						out[size - k] = '0';
+				}
+		}
+		return out;
+}
 
 void _logger ( short loglevel, const char func[], const char format[], ... )
 {

@@ -32,8 +32,14 @@ struct deviceInfo {
         struct managedBuffer devlog;
         struct timespec time_added;
 
-        struct xkb_state *state;
-
+		union {
+        	struct xkb_state *xstate;
+			
+	    	//kstate in bits: Capslock / CtrlR / CtrlL / ShiftR / ShiftL / Alt / Control / AltGr / Shift
+			//from keyboard.h
+			uint16_t kstate;
+		};
+		
         int score;
 };
 #endif
