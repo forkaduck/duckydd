@@ -27,6 +27,13 @@ static int load_x_keymaps ( const char screen[], struct keyboardInfo *kbd, struc
 {
         int err = 0;
 
+		kbd->x.ctx = xkb_context_new ( XKB_CONTEXT_NO_FLAGS );
+        if ( !kbd->x.ctx ) {
+                LOG ( -1, "xkb_context_new failed!\n" );
+                err = -1;
+                goto error_exit;
+        }
+        
         kbd->x.con = xcb_connect ( screen, NULL );
         if ( kbd->x.con == NULL ) {
                 LOG ( -1, "xcb_connect failed!\n" );
@@ -75,19 +82,20 @@ static int load_kernel_keymaps ( const int fd, struct keyboardInfo *kbd, struct 
 {
         size_t i, k;
 
-        memset_s ( kbd->k.keycode, MAX_SIZE_FUNCTION_NAME, 0 );
+        memset_s ( kbd->k.keycode, MAX_SIZE_SCANCODE, 0 );
 
         for ( i = 0; i < MAX_SIZE_SCANCODE; i++ ) {
                 struct kbkeycode temp;
 
                 temp.scancode = i;
+				temp.keycode = 0;
 
                 if ( ioctl ( fd, KDGETKEYCODE, &temp ) ) {
                         ERR ( "ioctl" );
                         return -1;
                 }
 
-                kbd->k.keycode[temp.scancode] = temp.keycode;
+                kbd->k.keycode[i] = temp.keycode;
         }
 
         memset_s ( kbd->k.actioncode, MAX_NR_KEYMAPS, 0 );
@@ -98,6 +106,7 @@ static int load_kernel_keymaps ( const int fd, struct keyboardInfo *kbd, struct 
 
                         temp.kb_table = i;
                         temp.kb_index = k;
+						temp.kb_value = 0;
 
                         if ( ioctl ( fd, KDGKBENT, &temp ) ) {
                                 ERR ( "ioctl" );
@@ -115,6 +124,7 @@ static int load_kernel_keymaps ( const int fd, struct keyboardInfo *kbd, struct 
                 struct kbsentry temp;
 
                 temp.kb_func = i;
+				temp.kb_string[0] = '\0';
 
                 if ( ioctl ( fd, KDGKBSENT, &temp ) ) {
                         ERR ( "ioctl" );
@@ -131,13 +141,6 @@ int init_keylogging ( const char input[], struct keyboardInfo *kbd, struct confi
 {
         int err = 0;
         memset_s ( kbd, sizeof ( kbd ), 0 );
-
-        kbd->x.ctx = xkb_context_new ( XKB_CONTEXT_NO_FLAGS );
-        if ( !kbd->x.ctx ) {
-                LOG ( -1, "xkb_context_new failed!\n" );
-                err = -1;
-                goto error_exit;
-        }
 
         if ( config->xkeymaps ) {
                 if ( load_x_keymaps ( input, kbd, config ) ) {
@@ -206,16 +209,6 @@ enum {
         KEY_STATE_REPEAT = 2,
 };
 
-/*
-
-KEY_... are scancode
-string table is for function keys only
-KVAL() returns the value KTYP() returns the table of a keycode?
-
-getfd is a function which searches for a console
-diacs or compose keys are accent keys
-
- */
 
 // translate scancode to string
 static int interpret_keycode ( struct managedBuffer *buff, struct deviceInfo *device, struct keyboardInfo *kbd, unsigned int code, uint8_t value )
@@ -348,4 +341,3 @@ int logkey ( struct keyboardInfo *kbd, struct deviceInfo* device, struct input_e
 
         return 0;
 }
-

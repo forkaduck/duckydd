@@ -3,6 +3,8 @@
  * rubber ducky attacks as a daemon
  *
  * TODO:
+ * 		*change kbd->k.string to be dynamic
+ * 
  * 		Maybe?
  * 		* implement dynamic epoll_wait timeout by checking the next device timeout?
  *      * replace strcmp_ss with safelib implementation?
@@ -46,7 +48,6 @@
 #define T struct deviceInfo
 #include "mbuffertemplate.h"
 
-
 static int deinit_device ( struct deviceInfo *device, struct configInfo *config, struct keyboardInfo *kbd, const int epollfd )
 {
         int err = 0;
@@ -70,18 +71,21 @@ static int deinit_device ( struct deviceInfo *device, struct configInfo *config,
 
 
         if ( config->logkeys ) {
-				if ( device->devlog.size > 0 ) {
-						if ( m_append_array_char ( & device->devlog, "\n\0", 2 ) ) {
-								LOG ( -1, "append_mbuffer_array_char failed!\n" );
-						}
-						LOG ( 1, "-> %s", device->devlog.b );
+				if (device->devlog.b != NULL) {
+						if ( device->devlog.size > 0 ) {
+								if ( m_append_array_char ( & device->devlog, "\n\0", 2 ) ) {
+										LOG ( -1, "append_mbuffer_array_char failed!\n" );
+								}
+								LOG ( 1, "-> %s\n", device->devlog.b );
 
-						if ( write ( kbd->outfd, ( char * ) device->devlog.b, device->devlog.size ) < 0 ) {
-								ERR ( "write" );
-						}
+								if ( write ( kbd->outfd, ( char * ) device->devlog.b, device->devlog.size ) < 0 ) {
+										ERR ( "write" );
+								}
 
-						m_free ( & device->devlog );
+								m_free ( & device->devlog );
+						}
 				}
+				
 
 				if (config->xkeymaps && device->xstate != NULL) {
 					    xkb_state_unref ( device->xstate );
@@ -191,6 +195,7 @@ static int add_fd ( struct managedBuffer *device, struct keyboardInfo *kbd, stru
 
                         m_deviceInfo ( device ) [i].score = 0;
                         m_deviceInfo ( device ) [i].xstate = NULL;
+                		m_init ( & m_deviceInfo ( device ) [i].devlog, sizeof ( char ) );
                 }
         }
 
@@ -198,7 +203,6 @@ static int add_fd ( struct managedBuffer *device, struct keyboardInfo *kbd, stru
                 strcpy_s ( m_deviceInfo ( device ) [fd].openfd, MAX_SIZE_PATH, location );
                 m_deviceInfo ( device ) [fd].fd = fd;
 
-                m_init ( & m_deviceInfo ( device ) [fd].devlog, sizeof ( char ) );
 
                 if ( clock_gettime ( CLOCK_REALTIME, & m_deviceInfo ( device ) [fd].time_added ) ) {
                         ERR ( "clock_gettime" );
