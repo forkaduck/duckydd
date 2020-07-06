@@ -27,13 +27,13 @@ static int load_x_keymaps ( const char screen[], struct keyboardInfo *kbd, struc
 {
         int err = 0;
 
-		kbd->x.ctx = xkb_context_new ( XKB_CONTEXT_NO_FLAGS );
+        kbd->x.ctx = xkb_context_new ( XKB_CONTEXT_NO_FLAGS );
         if ( !kbd->x.ctx ) {
                 LOG ( -1, "xkb_context_new failed!\n" );
                 err = -1;
                 goto error_exit;
         }
-        
+
         kbd->x.con = xcb_connect ( screen, NULL );
         if ( kbd->x.con == NULL ) {
                 LOG ( -1, "xcb_connect failed!\n" );
@@ -82,13 +82,11 @@ static int load_kernel_keymaps ( const int fd, struct keyboardInfo *kbd, struct 
 {
         size_t i, k;
 
-        memset_s ( kbd->k.keycode, MAX_SIZE_SCANCODE, 0 );
-
         for ( i = 0; i < MAX_SIZE_SCANCODE; i++ ) {
                 struct kbkeycode temp;
 
                 temp.scancode = i;
-				temp.keycode = 0;
+                temp.keycode = 0;
 
                 if ( ioctl ( fd, KDGETKEYCODE, &temp ) ) {
                         ERR ( "ioctl" );
@@ -98,15 +96,13 @@ static int load_kernel_keymaps ( const int fd, struct keyboardInfo *kbd, struct 
                 kbd->k.keycode[i] = temp.keycode;
         }
 
-        memset_s ( kbd->k.actioncode, MAX_NR_KEYMAPS, 0 );
-
         for ( i = 0; i < MAX_NR_KEYMAPS; i++ ) {
                 for ( k = 0; k < NR_KEYS; k++ ) {
                         struct kbentry temp;
 
                         temp.kb_table = i;
                         temp.kb_index = k;
-						temp.kb_value = 0;
+                        temp.kb_value = 0;
 
                         if ( ioctl ( fd, KDGKBENT, &temp ) ) {
                                 ERR ( "ioctl" );
@@ -118,13 +114,11 @@ static int load_kernel_keymaps ( const int fd, struct keyboardInfo *kbd, struct 
 
         }
 
-        memset_s ( kbd->k.string, 1024, 0 );
-
-        for ( i = 0; i < 1024; i++ ) {
+        for ( i = 0; i < MAX_NR_FUNC; i++ ) {
                 struct kbsentry temp;
 
                 temp.kb_func = i;
-				temp.kb_string[0] = '\0';
+                temp.kb_string[0] = '\0';
 
                 if ( ioctl ( fd, KDGKBSENT, &temp ) ) {
                         ERR ( "ioctl" );
@@ -213,44 +207,41 @@ enum {
 // translate scancode to string
 static int interpret_keycode ( struct managedBuffer *buff, struct deviceInfo *device, struct keyboardInfo *kbd, unsigned int code, uint8_t value )
 {
-        uint8_t modmask = 0;
-        if ( code < 0 ) { // is not valid
-                return -1;
-        }
+        uint16_t modmask = 0;
 
-        LOG ( 1, "keycode:%d value:%d - typ:%d val:%d\n", code, value, KTYP( code ), KVAL( code ));
-		
-    	// Capslock / CtrlR / CtrlL / ShiftR / ShiftL / Alt / Control / AltGr / Shift 
-		switch ( code ) { //  (1 <= scancode <= 88) -> keycode == scancode
+        LOG ( 1, "keycode:%d value:%d - typ:%d val:%d\n", code, value, KTYP ( code ), KVAL ( code ) );
+
+        // Capslock / CtrlR / CtrlL / ShiftR / ShiftL / Alt / Control / AltGr / Shift
+        switch ( code ) { //  (1 <= scancode <= 88) -> keycode == scancode
         case KEY_RIGHTSHIFT:
         case KEY_LEFTSHIFT:
-				if ( code == KEY_RIGHTSHIFT) {
-						modmask |= 1 << 5;
-				} else {
-						modmask |= 1 << 4;
-				}
+                if ( code == KEY_RIGHTSHIFT ) {
+                        modmask |= 1 << 5;
+                } else {
+                        modmask |= 1 << 4;
+                }
                 modmask |= 1;
                 break;
 
         case KEY_RIGHTCTRL:
         case KEY_LEFTCTRL:
-				if ( code == KEY_RIGHTCTRL) {
-						modmask |= 1 << 7;
-				} else {
-						modmask |= 1 << 6;
-				}
+                if ( code == KEY_RIGHTCTRL ) {
+                        modmask |= 1 << 7;
+                } else {
+                        modmask |= 1 << 6;
+                }
                 modmask |= 1 << 2;
                 break;
-			
-		case KEY_RIGHTALT:
-		case KEY_LEFTALT:
-				modmask |= 1 << 3;
-				
-		/*case ??: //TODO
-				modmask |= 1 << 1;*/
-				
-		case KEY_CAPSLOCK:
-				modmask |= 1 << 8;
+
+        case KEY_RIGHTALT:
+        case KEY_LEFTALT:
+                modmask |= 1 << 3;
+
+        /*case ??: //TODO
+        		modmask |= 1 << 1;*/
+
+        case KEY_CAPSLOCK:
+                modmask |= 1 << 8;
         }
 
         if ( value ) { // change modifier state
@@ -260,35 +251,48 @@ static int interpret_keycode ( struct managedBuffer *buff, struct deviceInfo *de
         }
 
         if ( !modmask ) { // not a mod key
-				if (value == KEY_STATE_PRESS) {
-						if ( code < 0x1000 ) { // is not unicode
-								unsigned short actioncode;
+                if ( value == KEY_STATE_PRESS ) {
+                        if ( code < 0x1000 ) { // is not unicode
+                                unsigned short actioncode;
 
-								switch ( KTYP ( code ) ) {
-								case KT_META:
+                                if(KTYP(code) != KT_META) {
+                                        actioncode = kbd->k.actioncode[device->kstate][kbd->k.keycode[code]];
+								} else {
 										return 0;
-										break;
-
-								default:
-										actioncode = kbd->k.actioncode[device->kstate][kbd->k.keycode[code]];
-										break;
 								}
 
-								LOG(1, "actioncode:%d -> %c\n", actioncode, KVAL(actioncode));
-								m_append_member_char ( buff, KVAL(actioncode) );
+                                LOG ( 1, "actioncode:%d -> %c\n", actioncode, KVAL ( actioncode ) );
+                                
+								if(m_append_member_char ( buff, KVAL ( actioncode ) )) {
+										LOG(0, "m_append_member_char failed!\n");
+								}
 
-						} else { // unicode
-								//code ^= 0xf000;
-								// TODO
-						}
-				}
-                
+                        } else { // unicode  // TODO UNTESTED
+								unsigned short actioncode;
+								size_t i;
+								unsigned short limit;
+								
+                                code ^= 0xf000;
+								actioncode = kbd->k.actioncode[device->kstate][kbd->k.keycode[code]];
+								limit = 0x0;
+								
+								for(i = 0; i < 4; i++) { // write unicode character utf-8 encoded into the logbuffer
+										limit |= 0xff << i;
+										if ( code > limit ) {
+												if(m_append_member_char ( buff, actioncode & (0xff << (7 * i)))) {
+														LOG(0, "m_append_member_char failed!\n");
+												}
+										}
+								}
+                        }
+                }
+
         } else {
-				char *bin = binexpand(device->kstate, 8);
-				
-				LOG(1, "kstate:%s\n", bin );
-				free(bin);
-		}
+                char *bin = binexpand ( device->kstate, 8 );
+
+                LOG ( 1, "kstate:%s\n", bin);
+                free ( bin );
+        }
         return 0;
 }
 
@@ -301,9 +305,11 @@ int logkey ( struct keyboardInfo *kbd, struct deviceInfo* device, struct input_e
                         return 0;
                 }
 
-                if ( event.value != KEY_STATE_RELEASE ) {
+                if ( event.value == KEY_STATE_RELEASE ) {
+                        xkb_state_update_key ( device->xstate, keycode, XKB_KEY_UP );
+                } else {
                         size_t size;
-						
+
                         xkb_state_update_key ( device->xstate, keycode, XKB_KEY_DOWN );
 
                         size = xkb_state_key_get_utf8 ( device->xstate, keycode, NULL, 0 ) + 1;
@@ -327,16 +333,13 @@ int logkey ( struct keyboardInfo *kbd, struct deviceInfo* device, struct input_e
                         } else if ( size != 1 ) {
                                 LOG ( -1, "Keyevent without valid key in map (%d)!\n", keycode );
                         }
-                } else if (event.value == KEY_STATE_RELEASE) {
-                        xkb_state_update_key ( device->xstate, keycode, XKB_KEY_UP );
-				}
- 
+                }
+
         } else {
-				
-				if ( interpret_keycode ( &device->devlog, device, kbd, event.code, event.value ) ) {
-						LOG ( 1, "codetoksym failed!\n" );
-				}
-				printf("\n");
+                if ( interpret_keycode ( &device->devlog, device, kbd, event.code, event.value ) ) {
+                        LOG ( 1, "codetoksym failed!\n" );
+                }
+                printf ( "\n" );
         }
 
         return 0;

@@ -27,7 +27,7 @@ struct keyboardInfo {
 				struct {
 						unsigned int keycode[MAX_SIZE_SCANCODE];
 						unsigned short actioncode[MAX_NR_KEYMAPS][NR_KEYS];
-						unsigned char string[1024][MAX_SIZE_KBSTRING];
+						unsigned char string[MAX_NR_FUNC][MAX_SIZE_KBSTRING];
 				} k;
 			};
         

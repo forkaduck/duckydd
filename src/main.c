@@ -450,8 +450,8 @@ int main ( int argc, char *argv[] )
                                                                 }
 
                                                                 if ( handle && event.value == 0 ) {
-                                                                        int arg = 1;
-                                                                        if ( ioctl ( fd, EVIOCGRAB, &arg ) ) {
+                                                                        int ioctlarg = 1;
+                                                                        if ( ioctl ( fd, EVIOCGRAB, &ioctlarg ) ) {
                                                                                 ERR ( "ioctl" );
                                                                         }
                                                                         m_deviceInfo ( &device ) [fd].score = -1;
