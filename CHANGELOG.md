@@ -8,6 +8,7 @@ and uses [Keep a Changelog](http://keepachangelog.com/) as a basis.
 #### Added
 - help flag
 - keylogging via kernel keytable (experimental)
+- added systemconsole fallback
 
 ## [0.2.2] - 2020-06-29
 #### Changed

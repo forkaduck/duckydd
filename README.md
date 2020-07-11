@@ -1,9 +1,9 @@
 # Ducky Detector Daemon
-This is a daemon which should protect the user from pretty much every HID injection attack.
+This daemon protects you from pretty much every HID injection attack.
 (If configured right)
 
 ## Compatibility Note:
-This daemon depends on udev and the xkb extension to the x server. Systemd is not required
+This daemon depends on Udev and the XKB extension to the x-server. Systemd is not required
 although you will have to write your own init script.
 
 ## Install:
@@ -16,15 +16,15 @@ cmake ..
 make
 ```
 
-If you use systemd then you can install the project with a service file like this:
+If you use Systemd then you can install the project with a service file like this:
 
 `sudo make install`
 
 ## Known issues:
 If you get the message "No protocol specified" when starting the daemon as a service
 then you need to add the user root to the list of trusted users of the x server. This
-needs to be done on boot but after the x server starts as the local user.
-To do this issue the following command:
+needs to be done on boot but after the x server has started.
+To do this issue the following command as the local user:
 
 `xhost local:root`
 
@@ -34,9 +34,11 @@ The config file should be located under /etc/duckydd/duckydd.conf.
 
 __Note:__ The standard config the daemon is shipped with, should
 protect against any injector which serves a virtual com port over
-the same usb port which is used by the attack itself.
+the same USB port which is used by the attack itself.
 However if the device does __not__ serve a virtual com port
 then the daemon will simply __ignore__ it.
+
+You can change this behavior with the `maxscore` option.
 
 The config file format is pretty simple.
 
@@ -64,28 +66,29 @@ all of the key macros and their keycode.
 
 This will set the maximum time after which the device will be
 removed from the watchlist. After that time period the daemon
-will simply ignore all events that are generated from that event file.
+will simply ignore all events that are generated from that event file
+and will also stop logging keystrokes (if enabled).
 
 
 `maxscore 0`
 
-The so called score of an event file is an internal variable which depicts
+The so called "score" of an event file is an internal variable which depicts
 how dangerous the event file is. If the daemon increments the score over the set maxscore
 and a blacklisted key is pressed then it will grab the file descriptor that was opened
-and thereby block any further keystrokes from being received from any other program
+and thereby block any further keystrokes from being received by any other program
 that was listening for events. 
 
 At the moment it is only incremented if a device with the same
-vendor id registers as a keyboard and a virtual com port.
+major and minor id registers as a keyboard and a virtual com port.
 
 Therefore if you leave it at 0 the daemon will lock all keyboards
 which type a single blacklisted key and haven't timed out.
-If you set it to 1 then it will only lock devices which have been registered
+If you set it to 1 then it will only lock devices which registered
 as a keyboard and a serial com port.
-
 
 After the keyboard has been locked you have to replug it
 to unlock it.
+
 
 `keylogging 1`
 
@@ -93,13 +96,14 @@ Enables keylogging of potential attacks
 
 __Note:__ The keylogger logs all keypresses that are read from the event file
 until the specific keyboard times out. The keys pressed are then written to a
-file called key.log into the path which the logpath variable is set to.
+file called key.log into the logpath.
+
 
 `logpath /`
 
 Sets the path where every log file is saved in.
 
-If the process is given the -d flag (daemonize) then it will also write
+If the process is passed the -d flag (daemonize) then it will also write
 it's log messages to a file which is called out.log in the logpath directory.
 
 Otherwise it will just use the directory for the keylog.
@@ -111,9 +115,8 @@ using environment variables.
 `usexkeymaps 1`
 
 Disable to use the kernel keytables which are set with the loadkeys program.
-At the moment this is an **experimental** feature and only works for ASCII characters.
-With it disabled you don't have to have the x server running and still be able to log
-attacks.
+At the moment this is an **experimental** feature.
+With it disabled you can even log attacks while the x-server is not running.
 
 ## Uninstall:
 ```
