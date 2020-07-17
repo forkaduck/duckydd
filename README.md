@@ -1,6 +1,6 @@
 # Ducky Detector Daemon
 This daemon protects you from pretty much every HID injection attack.
-(If configured right)
+(If configured correctly)
 
 ## Compatibility Note:
 This daemon depends on Udev and the XKB extension to the x-server. Systemd is not required
@@ -32,10 +32,10 @@ To do this issue the following command as the local user:
 ## Configuration:
 The config file should be located under /etc/duckydd/duckydd.conf.
 
-__Note:__ The standard config the daemon is shipped with, should
+__Note:__ The standard config the daemon is shipped with should
 protect against any injector which serves a virtual com port over
 the same USB port which is used by the attack itself.
-However if the device does __not__ serve a virtual com port
+However, if the device does __not__ serve a virtual com port
 then the daemon will simply __ignore__ it.
 
 You can change this behavior with the `maxscore` option.
@@ -72,7 +72,7 @@ and will also stop logging keystrokes (if enabled).
 
 `maxscore 0`
 
-The so called "score" of an event file is an internal variable which depicts
+The so-called "score" of an event file is an internal variable which depicts
 how dangerous the event file is. If the daemon increments the score over the set maxscore
 and a blacklisted key is pressed then it will grab the file descriptor that was opened
 and thereby block any further keystrokes from being received by any other program
@@ -104,7 +104,7 @@ file called key.log into the logpath.
 Sets the path where every log file is saved in.
 
 If the process is passed the -d flag (daemonize) then it will also write
-it's log messages to a file which is called out.log in the logpath directory.
+its log messages to a file which is called out.log in the logpath directory.
 
 Otherwise it will just use the directory for the keylog.
 
@@ -114,7 +114,7 @@ using environment variables.
 
 `usexkeymaps 1`
 
-Disable to use the kernel keytables which are set with the loadkeys program.
+Disable this to use the kernel keytables which are set with the loadkeys program.
 At the moment this is an **experimental** feature.
 With it disabled you can even log attacks while the x-server is not running.
 

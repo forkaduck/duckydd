@@ -6,13 +6,13 @@ and uses [Keep a Changelog](http://keepachangelog.com/) as a basis.
 
 ## [Unreleased]
 #### Added
-- help flag
-- keylogging via kernel keytable (experimental)
-- added systemconsole fallback
+- Help flag
+- Keylogging via kernel keytable (experimental)
+- Added system console fallback
 
 ## [0.2.2] - 2020-06-29
 #### Changed
-- changed systemd install path
+- Changed systemd install path
 
 #### Fixed
 - Added fix for "No protocol specified"
@@ -23,19 +23,19 @@ and uses [Keep a Changelog](http://keepachangelog.com/) as a basis.
 - Keylogging using the xkbcommon library
 
 ##### Config changes
-- added keylogging
-- added logpath
-- changed blacklist (look at README.md for more info)
-- changed format of the config file
+- Added keylogging
+- Added logpath
+- Changed blacklist (look at README.md for more info)
+- Changed format of the config file
 
 #### Changed
 - Refactored the hole project
-- tty detection now uses major and minor numbers for identification
+- TTY detection now uses major and minor numbers for identification
 
 #### Fixed
 - Fixed some bugs which where introduced by this release
 
 #### Security
-- added compile flag "-fstack-protector-strong"
-- added input sanitation to the configuration parser
-- rewrote configuration parser
+- Added compile flag "-fstack-protector-strong"
+- Added input sanitation to the configuration parser
+- Rewrote configuration parser
