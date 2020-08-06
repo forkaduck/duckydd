@@ -8,7 +8,8 @@ and uses [Keep a Changelog](http://keepachangelog.com/) as a basis.
 #### Added
 - Help flag
 - Keylogging via kernel keytable (experimental)
-- Added system console fallback
+- System console fallbacks as a source for keymaps
+- Dynamic epoll_wait timeout
 
 ## [0.2.2] - 2020-06-29
 #### Changed
