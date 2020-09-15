@@ -4,15 +4,15 @@
 #include <stdio.h>
 
 struct managedBuffer {
-        void *b;
-        size_t size;
-        size_t typesize;
+    void* b;
+    size_t size;
+    size_t typesize;
 };
 
-void m_init ( struct managedBuffer *buffer, size_t typesize );
+void m_init(struct managedBuffer* buffer, size_t typesize);
 
-void m_free ( struct managedBuffer *buffer );
+void m_free(struct managedBuffer* buffer);
 
-int m_realloc ( struct managedBuffer *buffer, size_t size );
+int m_realloc(struct managedBuffer* buffer, size_t size);
 
 #endif
