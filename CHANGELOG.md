@@ -11,6 +11,9 @@ and uses [Keep a Changelog](http://keepachangelog.com/) as a basis.
 - System console fallbacks as a source for keymaps
 - Dynamic epoll_wait timeout
 
+#### Fixed
+- Keystrokes being logged even if the device was not malicious
+
 ## [0.2.1] - 2020-06-29
 #### Changed
 - Changed systemd install path

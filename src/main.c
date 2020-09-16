@@ -5,7 +5,6 @@
  * TODO:
  * 		* implement microcontroller firmware overwrite over the serial port
  * 		Maybe?
- * 		* implement dynamic epoll_wait timeout by checking the next device timeout?
  *      * replace strcmp_ss with safelib implementation?
  * 		* write unit tests with cmocka?
  *
@@ -76,7 +75,7 @@ static int deinit_device(struct deviceInfo* device, struct configInfo* config, s
         device->fd = -1;
     }
 
-    if (config->logkeys) {
+    if (config->logkeys && device->score < 0) {
         if (device->devlog.b != NULL) {
             if (device->devlog.size > 0) {
                 if (m_append_array_char(&device->devlog, "\n\0", 2)) {
