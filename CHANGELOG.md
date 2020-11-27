@@ -10,6 +10,17 @@ and uses [Keep a Changelog](http://keepachangelog.com/) as a basis.
 - Keylogging via kernel keytable (experimental)
 - System console fallbacks as a source for keymaps
 - Dynamic epoll_wait timeout
+- Added length check of function name and format string to _logger
+
+#### Changed
+- Moved safestringlib to lib folder
+
+##### Config changes
+- Removed maxtime option
+- Added minavrg option (For more info have a look at README.md)
+
+#### Removed
+- Timeout of usb devices
 
 #### Fixed
 - Keystrokes being logged even if the device was not malicious

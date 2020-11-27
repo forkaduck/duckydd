@@ -3,6 +3,7 @@
 
 // general macros
 #define MAX_SIZE_EVENTS 40
+#define MAX_LOGLEVEL 2
 
 // external buffers
 #define MAX_SIZE_PATH 200

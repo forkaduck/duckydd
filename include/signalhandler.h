@@ -1,7 +1,10 @@
 #ifndef SIGNALHANDLER_DUCKYDD_H
 #define SIGNALHANDLER_DUCKYDD_H
 
-void handle_signal(int signal);
+// signal handler function
+void signal_handler(int signal);
+
+// registers the sighandler 
 int init_signalhandler();
 
 #endif

@@ -33,25 +33,17 @@ int init_signalhandler()
     action.sa_flags = 0;
     sigemptyset(&action.sa_mask);
 
-    if (sigaction(SIGHUP, &action, NULL)) {
-        ERR("sigaction (SIGHUP)");
+	// register nonfatal handler
+    if (sigaction(SIGHUP | SIGTERM | SIGINT, &action, NULL)) {
+        ERR("sigaction");
         return -1;
     }
 
-    if (sigaction(SIGTERM, &action, NULL)) {
-        ERR("sigaction (SIGTERM)");
-        return -2;
-    }
-
-    if (sigaction(SIGINT, &action, NULL)) {
-        ERR("sigaction (SIGINT)");
-        return -3;
-    }
-
+	// ignore sigchild
     action.sa_handler = SIG_IGN;
     if (sigaction(SIGCHLD, &action, NULL)) {
         ERR("sigaction (SIGCHLD)");
-        return -4;
+        return -2;
     }
 
     return 0;

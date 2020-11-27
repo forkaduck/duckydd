@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 
+# enable compilation commands file
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
 # set build type
@@ -23,30 +26,32 @@ set (SYSTEMD_UNIT_DIR "/usr/lib/systemd/system/")
 
 # The version numbering
 set (VERSION_MAJOR 0)
-set (VERSION_MINOR 2)
-set (PATCH_LEVEL 2)
+set (VERSION_MINOR 3)
+set (PATCH_LEVEL 0)
 
 set (VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${PATCH_LEVEL}")
 add_compile_definitions(VER="${VERSION}")
 
 # set source and include directories
-include_directories (include)
+include_directories(${CMAKE_SOURCE_DIR}/include)
 file (GLOB SOURCES "src/*.c")
 
 add_executable(duckydd ${SOURCES})
 
-
-set (CMAKE_C_FLAGS_DEBUG "-g3 -lefence")
+set (CMAKE_C_FLAGS_DEBUG "-g3")
 set (CMAKE_C_FLAGS_RELEASE "-O3")
 
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -fstack-protector-strong")
 
+# compile safestringlib
 ExternalProject_Add(sslib
-	PREFIX ${CMAKE_SOURCE_DIR}/safestringlib
+	PREFIX ${CMAKE_SOURCE_DIR}/lib/safestringlib
 	GIT_REPOSITORY "https://github.com/intel/safestringlib"
-	UPDATE_COMMAND ""
-	SOURCE_DIR "${CMAKE_SOURCE_DIR}/safestringlib/safeclib"
-	BINARY_DIR "${CMAKE_SOURCE_DIR}/safestringlib/build"
+    GIT_PROGRESS true
+    UPDATE_COMMAND ""
+    UPDATE_DISCONNECTED true
+	SOURCE_DIR "${CMAKE_SOURCE_DIR}/lib/safestringlib/safeclib"
+	BINARY_DIR "${CMAKE_SOURCE_DIR}/lib/safestringlib/build"
 	BUILD_ALWAYS false
 	BUILD_COMMAND make
 	INSTALL_COMMAND ""
@@ -59,22 +64,23 @@ find_library(UDEV_LIB udev)
 find_library(XKBCOMMON_LIB xkbcommon)
 find_library(XKBCOMMON_X11_LIB xkbcommon-x11)
 find_library(XCB_LIB xcb)
+find_library(MATH_LIB m)
 
 add_library(safestringlib STATIC IMPORTED)
 set_target_properties(safestringlib PROPERTIES
-        IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/safestringlib/build/libsafestring_static.a"
-        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/safestringlib/include")
+        IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/safestringlib/build/libsafestring_static.a"
+        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/lib/safestringlib/include")
 
-add_dependencies(duckydd safestringlib)
+add_dependencies(duckydd safestringlib sslib)
 target_link_libraries(duckydd 
 	PRIVATE
 		${UDEV_LIB}
 		${XKBCOMMON_LIB}
 		${XKBCOMMON_X11_LIB}
 		${XCB_LIB}
+        ${MATH_LIB}
 		safestringlib
 )
-
 
 # install the release build
 install(TARGETS duckydd

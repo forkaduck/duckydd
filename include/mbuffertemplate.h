@@ -16,6 +16,8 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
+
+// append a member to the array
 static int FN(m_append_member_)(struct managedBuffer* buffer, T input)
 {
     buffer->size++;
@@ -26,6 +28,7 @@ static int FN(m_append_member_)(struct managedBuffer* buffer, T input)
     return 0;
 }
 
+// append multiple members to the array
 static int FN(m_append_array_)(struct managedBuffer* buffer, T* input, size_t size)
 {
     buffer->size += size;
@@ -36,6 +39,7 @@ static int FN(m_append_array_)(struct managedBuffer* buffer, T* input, size_t si
     return 0;
 }
 
+// cast managedBuffer to the template type
 static T* FN(m_)(struct managedBuffer* buffer)
 {
     return (T*)(buffer->b);

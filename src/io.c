@@ -34,6 +34,7 @@ static void cleaninput(char* input, const size_t size)
         char curr;
 
         curr = input[i];
+		// check for invalid characters
         if ((curr <= '9' && curr >= '0') || (curr <= 'Z' && curr >= 'A') || (curr <= 'z' && curr >= 'a') || curr == '/') {
             input[i] = curr;
 
@@ -47,7 +48,7 @@ static void cleaninput(char* input, const size_t size)
     input[i] = '\0';
 }
 
-static long int parse_longlong(const char input[], char** end)
+static long int parse_long(const char input[], char** end)
 {
     long int num;
     errno = 0;
@@ -59,6 +60,7 @@ static long int parse_longlong(const char input[], char** end)
         }
     }
 
+	// if the value is out of the range of a long
     if ((num == LLONG_MAX || num == LLONG_MIN) && errno == ERANGE) {
         return -3;
     }
@@ -72,7 +74,8 @@ static size_t readfile(int fd, char** output)
     size_t readsize = -1;
     size_t size = 0;
 
-    while (readsize != 0) { // read 10 bytes, reallocate the array and then copy them into the array
+	// read 10 bytes, reallocate the array and then copy them into the array
+    while (readsize != 0) {
         char* temp;
         readsize = read(fd, buffer, sizeof(buffer));
         size += readsize;
@@ -100,16 +103,17 @@ int readconfig(const char path[], struct configInfo* config)
     char* buffer = NULL;
     char* current = NULL;
 
-    config->maxtime.tv_sec = 0;
-    config->maxtime.tv_nsec = 0;
     config->maxcount = -1;
 
     config->logpath[0] = '\0';
 
-    m_init(&config->blacklist, sizeof(long int));
     config->logkeys = false;
     config->xkeymaps = false;
 
+    config->minavrg.tv_sec = 0;
+    config->minavrg.tv_nsec = 0;
+
+	// open the config file if it has no lock on it
     if (config->configfd == -1) {
         config->configfd = open(path, O_RDWR); // open the config
         if (config->configfd < 0) {
@@ -118,6 +122,7 @@ int readconfig(const char path[], struct configInfo* config)
             goto error_exit;
         }
 
+		// try to lock the file if possible
         {
             struct flock lock;
             lock.l_type = F_WRLCK;
@@ -126,7 +131,7 @@ int readconfig(const char path[], struct configInfo* config)
             lock.l_start = 0;
             lock.l_len = 0;
 
-            if (fcntl(config->configfd, F_SETLK, &lock)) { // try to lock the file
+            if (fcntl(config->configfd, F_SETLK, &lock)) {
                 if (errno == EACCES || errno == EAGAIN) {
                     LOG(-1, "Another instance is probably running!\n");
                 }
@@ -136,10 +141,10 @@ int readconfig(const char path[], struct configInfo* config)
             }
         }
     } else {
-        m_free(&config->blacklist);
         lseek(config->configfd, 0, SEEK_SET);
     }
 
+	// read the file into a dynamic buffer
     size = readfile(config->configfd, &buffer);
     if (buffer == NULL) {
         LOG(-1, "readfile failed\n");
@@ -157,6 +162,8 @@ int readconfig(const char path[], struct configInfo* config)
     usedsize = 0;
     while (size > usedsize) {
         size_t next;
+
+		// loop over the string and pick out every line
         for (next = 0; next < (size - usedsize); next++) {
             if (current[next] == '\0') {
                 usedsize += next + 1;
@@ -165,23 +172,24 @@ int readconfig(const char path[], struct configInfo* config)
         }
         cleaninput(current, next);
 
-        if (!strncmp_ss(current, "maxtime", 7) && config->maxtime.tv_sec == 0 && config->maxtime.tv_nsec == 0) {
+		// gets the minimal average time difference between keystrokes
+        if (strncmp_ss(current, "minavrg", 6) == 0) {
             char* end = NULL;
 
-            config->maxtime.tv_sec = parse_longlong(&current[8], &end);
-            config->maxtime.tv_nsec = parse_longlong(&end[1], &end);
+            config->minavrg.tv_sec = parse_long(&current[8], &end);
+            config->minavrg.tv_nsec = parse_long(&end[1], &end);
 
-            if (config->maxtime.tv_sec < 0 || config->maxtime.tv_nsec < 0) {
-                LOG(-1, "The option of maxtime is malformed or out of range!\n");
+            if (config->minavrg.tv_sec < 0 || config->minavrg.tv_nsec < 0) {
+                LOG(-1, "The option of minavrg is malformed or out of range!\n");
                 err = -4;
                 goto error_exit;
             }
 
-            LOG(1, "Maxtime set to %lds %ldns\n", config->maxtime.tv_sec,
-                config->maxtime.tv_nsec);
+            LOG(1, "Minavrg set to %lds %ldns\n", config->minavrg.tv_sec, config->minavrg.tv_nsec);
 
-        } else if (!strncmp_ss(current, "maxscore", 8) && config->maxcount == -1) {
-            config->maxcount = parse_longlong(&current[9], NULL);
+		// sets the max score at which the device will be locked
+        } else if (strncmp_ss(current, "maxscore", 7) == 0) {
+            config->maxcount = parse_long(&current[9], NULL);
 
             if (config->maxcount < 0) {
                 LOG(-1, "The option of maxscore is malformed or out of range!\n");
@@ -191,24 +199,8 @@ int readconfig(const char path[], struct configInfo* config)
 
             LOG(1, "Maxscore set to %ld\n", config->maxcount);
 
-        } else if (!strncmp_ss(current, "blacklist", 8)) {
-            char* end = &current[9];
-
-            long int number;
-
-            number = parse_longlong(&end[1], &end);
-            if (number <= KEY_MAX) {
-                if (m_append_member_long_int(&config->blacklist, number)) {
-                    err = -6;
-                    goto error_exit;
-                }
-                LOG(1, "Added %d to the blacklist\n", number);
-
-            } else {
-                LOG(1, "%d is not a valid keyboard scancode!\n");
-            }
-
-        } else if (!strncmp_ss(current, "logpath", 7)) {
+		// path where the logfile will be safed
+        } else if (strncmp_ss(current, "logpath", 6) == 0) {
             strcpy_s(config->logpath, MAX_SIZE_PATH, &current[8]);
 
             struct stat st;
@@ -230,19 +222,22 @@ int readconfig(const char path[], struct configInfo* config)
                 if (S_ISDIR(st.st_mode)) {
                     LOG(1, "Set %s as the path for logging!\n", config->logpath);
                 } else {
-                    LOG(0, "Logpath does not point to a directory!\n");
+                    LOG(-1, "Logpath does not point to a directory!\n");
                     err = -9;
                     goto error_exit;
                 }
             }
 
-        } else if (!strncmp_ss(current, "keylogging", 10)) {
-            if (parse_longlong(&current[11], NULL) == 1) {
+		// enable or disable keylogging (This option will probably be removed in a future update)
+        } else if (strncmp_ss(current, "keylogging", 9) == 0) {
+            if (parse_long(&current[11], NULL) == 1) {
                 config->logkeys = true;
                 LOG(1, "Logging all potential attacks!\n");
             }
-        } else if (!strncmp_ss(current, "usexkeymaps", 11)) {
-            if (parse_longlong(&current[12], NULL) == 1) {
+
+		// enables the use of x server keymaps if they are available 
+        } else if (strncmp_ss(current, "usexkeymaps", 10) == 0) {
+            if (parse_long(&current[12], NULL) == 1) {
                 config->xkeymaps = true;
                 LOG(1, "Using x server keymaps!\n");
             }
@@ -258,7 +253,6 @@ error_exit:
     if (close(config->configfd)) {
         ERR("close");
     }
-    m_free(&config->blacklist);
     free(buffer);
     return err;
 }
@@ -273,32 +267,36 @@ int handleargs(int argc, char* argv[], struct argInfo* data)
     for (i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
             switch (argv[i][1]) {
+			// path to the config to be used
             case 'c':
                 if (i + 1 < argc) {
                     strcpy_s(data->configpath, MAX_SIZE_PATH, argv[i + 1]); // config path
                 }
                 break;
 
+			// daemonize the daemon
             case 'd':
                 daemonize = true;
                 break;
 
+			// increase the verbosity level
             case 'v':
-                if (loglvl < 2) {
+                if (loglvl < MAX_LOGLEVEL) {
                     loglvl += 1;
                 } else {
                     LOG(0, "Can't increment loglevel any more!\n");
                 }
                 break;
 
+			// shows help
             case 'h':
                 printf("duckydd v%s\n"
                        "Usage: duckydd [Options]\n"
-                       "\t\t-c [file]\tSpecify a config file location\n"
+                       "\t\t-c <file>\tSpecify a config file\n"
                        "\t\t-d\t\tDaemonize the process\n"
-                       "\t\t-v\t\tIncrease loglevel\n"
+                       "\t\t-v\t\tIncrease verbosity of the console output\n"
                        "\t\t-h\t\tShow this help section\n\n"
-                       "For config options please look at the README.md\n\n",
+                       "For config options please have a look at the README.md\n\n",
                     VER);
                 help = true;
                 break;
@@ -323,6 +321,7 @@ int handleargs(int argc, char* argv[], struct argInfo* data)
     return 0;
 }
 
+// writes a hex number as binary into a dynamic char buffer
 char* binexpand(uint8_t bin, size_t size)
 {
     size_t k;
@@ -347,7 +346,10 @@ char* binexpand(uint8_t bin, size_t size)
 
 void _logger(short loglevel, const char func[], const char format[], ...)
 {
-    if (loglevel <= loglvl) {
+	// check for a format string bigger than the max
+    if (loglevel <= loglvl && strnlen(func, MAX_SIZE_FORMAT_STRING) <= MAX_SIZE_FORMAT_STRING
+        && strnlen(format, MAX_SIZE_FUNCTION_NAME) <= MAX_SIZE_FUNCTION_NAME) {
+
         va_list args;
         va_start(args, format);
 
@@ -355,6 +357,7 @@ void _logger(short loglevel, const char func[], const char format[], ...)
         char prefix;
         FILE* fd;
 
+		// change prefix depending on loglevel
         switch (loglevel) {
         case -1:
             prefix = '!';
@@ -397,7 +400,7 @@ int strncmp_ss(const char str1[], const char str2[], size_t length)
 {
     size_t i = 0;
 
-    while (str1[i] == str2[i] && i >= length) {
+    while (str1[i] == str2[i] && i < length) {
         if (str1[i] == '\0' || str2[i] == '\0') {
             break;
         }
@@ -407,6 +410,7 @@ int strncmp_ss(const char str1[], const char str2[], size_t length)
     return str1[i] - str2[i];
 }
 
+// returns the filename from a path
 const char* find_file(const char* input)
 {
     size_t i;

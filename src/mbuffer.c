@@ -3,6 +3,7 @@
 
 #include "mbuffer.h"
 
+// initalize a managed buffer
 void m_init(struct managedBuffer* buffer, size_t typesize)
 {
     buffer->b = NULL;
@@ -10,6 +11,7 @@ void m_init(struct managedBuffer* buffer, size_t typesize)
     buffer->typesize = typesize;
 }
 
+// free a managed buffer
 void m_free(struct managedBuffer* buffer)
 {
     free(buffer->b);
@@ -17,6 +19,7 @@ void m_free(struct managedBuffer* buffer)
     buffer->size = 0;
 }
 
+// reallocate the managed buffer to the given size
 int m_realloc(struct managedBuffer* buffer, size_t size)
 {
     void* temp;

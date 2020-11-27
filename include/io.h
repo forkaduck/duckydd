@@ -15,17 +15,16 @@
 
 // holds data read from the config file (mainly used by readconfig)
 struct configInfo {
-    struct timespec maxtime;
     long int maxcount;
 
     char logpath[MAX_SIZE_PATH];
 
     // kbd
-    struct managedBuffer blacklist;
     bool logkeys;
     bool xkeymaps;
 
     int configfd;
+    struct timespec minavrg;
 };
 
 // holds data that was parsed out by handleargs

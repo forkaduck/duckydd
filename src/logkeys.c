@@ -23,7 +23,17 @@
 #define T char
 #include "mbuffertemplate.h"
 
-static const size_t conpathsize = 6;
+#define PREFIX struct_timespec
+#define T struct timespec
+#include "mbuffertemplate.h"
+
+enum {
+    KEY_STATE_RELEASE = 0,
+    KEY_STATE_PRESS = 1,
+    KEY_STATE_REPEAT = 2,
+};
+
+static const size_t conpath_size = 6;
 static const char* conpath[] = {
     "/proc/self/fd/0",
     "/dev/tty",
@@ -38,13 +48,15 @@ static int open_console0()
 {
     size_t i;
 
-    for (i = 0; i < conpathsize; i++) {
+	// go through some console paths
+    for (i = 0; i < conpath_size; i++) {
         int fd;
 
         fd = open(conpath[i], O_NOCTTY | O_RDONLY);
         if (fd >= 0) {
             char ioctlarg;
 
+			// if it is a tty and has the right keyboard return the fd
             if (!ioctl(fd, KDGKBTYPE, &ioctlarg)) {
                 if (isatty(fd) && ioctlarg == KB_101) {
                     return fd;
@@ -56,7 +68,7 @@ static int open_console0()
             }
         }
 
-        LOG(-1, "Failed to open %s! Trying next one ...\n", conpath[i]);
+        LOG(1, "Failed to open %s! Trying next one ...\n", conpath[i]);
     }
 
     return -1;
@@ -66,6 +78,7 @@ static int load_x_keymaps(const char screen[], struct keyboardInfo* kbd, struct 
 {
     int err = 0;
 
+	// create a new context
     kbd->x.ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
     if (!kbd->x.ctx) {
         LOG(-1, "xkb_context_new failed!\n");
@@ -73,6 +86,7 @@ static int load_x_keymaps(const char screen[], struct keyboardInfo* kbd, struct 
         goto error_exit;
     }
 
+	// connect to the x server
     kbd->x.con = xcb_connect(screen, NULL);
     if (kbd->x.con == NULL) {
         LOG(-1, "xcb_connect failed!\n");
@@ -86,6 +100,7 @@ static int load_x_keymaps(const char screen[], struct keyboardInfo* kbd, struct 
         goto error_exit;
     }
 
+	// setup the xkb extension
     {
         uint16_t major_xkb, minor_xkb;
         uint8_t event_out, error_out;
@@ -96,6 +111,7 @@ static int load_x_keymaps(const char screen[], struct keyboardInfo* kbd, struct 
         }
     }
 
+	// get device id of the core x keyboard
     kbd->x.device_id = xkb_x11_get_core_keyboard_device_id(kbd->x.con);
     if (kbd->x.device_id == -1) {
         LOG(-1, "xkb_x11_get_core_keyboard_device_id failed!\n");
@@ -103,6 +119,7 @@ static int load_x_keymaps(const char screen[], struct keyboardInfo* kbd, struct 
         goto error_exit;
     }
 
+	// get keymap
     kbd->x.keymap = xkb_x11_keymap_new_from_device(kbd->x.ctx, kbd->x.con, kbd->x.device_id, XKB_KEYMAP_COMPILE_NO_FLAGS);
     if (!kbd->x.keymap) {
         LOG(-1, "xkb_x11_keymap_new_from_device failed!\n");
@@ -121,6 +138,7 @@ static int load_kernel_keymaps(const int fd, struct keyboardInfo* kbd, struct co
 {
     size_t i, k;
 
+	// load scancode to keycode table
     for (i = 0; i < MAX_SIZE_SCANCODE; i++) {
         struct kbkeycode temp;
 
@@ -135,6 +153,7 @@ static int load_kernel_keymaps(const int fd, struct keyboardInfo* kbd, struct co
         kbd->k.keycode[i] = temp.keycode;
     }
 
+	// load keycode to actioncode table
     for (i = 0; i < MAX_NR_KEYMAPS; i++) {
         for (k = 0; k < NR_KEYS; k++) {
             struct kbentry temp;
@@ -152,6 +171,7 @@ static int load_kernel_keymaps(const int fd, struct keyboardInfo* kbd, struct co
         }
     }
 
+	// loads actioncode to string table
     for (i = 0; i < MAX_NR_FUNC; i++) {
         struct kbsentry temp;
 
@@ -172,17 +192,19 @@ static int load_kernel_keymaps(const int fd, struct keyboardInfo* kbd, struct co
 int init_keylogging(const char input[], struct keyboardInfo* kbd, struct configInfo* config)
 {
     int err = 0;
-    memset_s(kbd, sizeof(kbd), 0);
 
+	// setup x keymaps
     if (config->xkeymaps) {
         if (load_x_keymaps(input, kbd, config)) {
             LOG(-1, "init_xkeylogging failed!\n");
         }
     }
 
+	// use kernel keymaps
     if (!config->xkeymaps) {
         int fd;
 
+		// get a file descriptor to console 0
         fd = open_console0();
         if (fd < 0) {
             LOG(-1, "Failed to open a file descriptor to a vaild console!\n");
@@ -190,6 +212,7 @@ int init_keylogging(const char input[], struct keyboardInfo* kbd, struct configI
             goto error_exit;
         }
 
+		// load keytable / accent table / and scancode translation table
         if (load_kernel_keymaps(fd, kbd, config)) {
             LOG(-1, "init_kernelkeylogging failed!\n");
             err = -2;
@@ -197,6 +220,7 @@ int init_keylogging(const char input[], struct keyboardInfo* kbd, struct configI
         }
     }
 
+	// create keylog file
     {
         const char file[] = { "/key.log" };
         char path[sizeof(config->logpath) + sizeof(file)];
@@ -212,11 +236,12 @@ int init_keylogging(const char input[], struct keyboardInfo* kbd, struct configI
         }
     }
 
+	LOG(1, "Keylogging ready!\n");
     return err;
 
 error_exit:
     config->logkeys = false;
-    LOG(0, "Turning of keylogging because the init of both the kernel keymaps and libxkbcommon failed!\n");
+    LOG(-1, "Turning of keylogging because the init of both the kernel keymaps and libxkbcommon failed!\n");
     return err;
 }
 
@@ -233,12 +258,6 @@ int deinit_keylogging(struct keyboardInfo* kbd, struct configInfo* config)
     }
     return 0;
 }
-
-enum {
-    KEY_STATE_RELEASE = 0,
-    KEY_STATE_PRESS = 1,
-    KEY_STATE_REPEAT = 2,
-};
 
 // translate scancode to string
 static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* device, struct keyboardInfo* kbd, unsigned int code, uint8_t value)
@@ -332,15 +351,70 @@ static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* devi
     return 0;
 }
 
+static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
+{
+    size_t i;
+    bool uninitalized = false;
+
+    // increment currdiff until wraparound
+    if (device->currdiff < device->strokesdiff.size) {
+		// write current time into queue
+		if (clock_gettime(CLOCK_REALTIME, &m_struct_timespec(&device->strokesdiff)[device->currdiff])) {
+			ERR("clock_gettime");
+			return -1;
+		}
+
+        device->currdiff++;
+
+    } else {
+        device->currdiff = 0;
+    }
+
+	// find out if the buffer has already been filled
+    for (i = 0; i < device->strokesdiff.size; i++) {
+        if (m_struct_timespec(&device->strokesdiff)[i].tv_sec == 0 && m_struct_timespec(&device->strokesdiff)[i].tv_nsec == 0) {
+            uninitalized = true;
+        }
+    }
+
+	// if it is filled then use it to calculate the mean value
+    if (!uninitalized) {
+        struct timespec sum; // sum in milliseconds
+
+        memset_s(&sum, sizeof(struct timespec), 0);
+        // calc arithmetic mean of the array
+        for (i = 0; i < device->strokesdiff.size; i++) {
+            struct timespec curr;
+
+            curr = m_struct_timespec(&device->strokesdiff)[i];
+
+            sum.tv_sec += curr.tv_sec;
+            sum.tv_nsec += curr.tv_nsec;
+        }
+
+        sum.tv_sec /= device->strokesdiff.size;
+        sum.tv_nsec /= device->strokesdiff.size;
+
+        if (sum.tv_sec < config->minavrg.tv_sec || (sum.tv_sec == config->minavrg.tv_sec && sum.tv_nsec < config->minavrg.tv_nsec)) {
+            device->score++;
+        }
+    }
+
+    return 0;
+}
+
 int logkey(struct keyboardInfo* kbd, struct deviceInfo* device, struct input_event event, struct configInfo* config)
 {
+	// if xkbcommon lib has initalized
     if (config->xkeymaps) {
         xkb_keycode_t keycode = event.code + 8;
 
+		// if key repeates
         if (event.value == KEY_STATE_REPEAT && !xkb_keymap_key_repeats(kbd->x.keymap, event.code)) {
             return 0;
         }
 
+		// track key releases
         if (event.value == KEY_STATE_RELEASE) {
             xkb_state_update_key(device->xstate, keycode, XKB_KEY_UP);
         } else {
@@ -348,6 +422,7 @@ int logkey(struct keyboardInfo* kbd, struct deviceInfo* device, struct input_eve
 
             xkb_state_update_key(device->xstate, keycode, XKB_KEY_DOWN);
 
+			// get the size of the required buffer
             size = xkb_state_key_get_utf8(device->xstate, keycode, NULL, 0) + 1;
             if (size > 1) {
                 char* buffer;
@@ -358,6 +433,7 @@ int logkey(struct keyboardInfo* kbd, struct deviceInfo* device, struct input_eve
                     return -1;
                 }
 
+				// get the buffers
                 xkb_state_key_get_utf8(device->xstate, keycode, buffer, size);
 
                 if (m_append_array_char(&device->devlog, buffer, size - 1)) { // dont copy \0
@@ -372,10 +448,18 @@ int logkey(struct keyboardInfo* kbd, struct deviceInfo* device, struct input_eve
         }
 
     } else {
+		// interpret the keycode using the kernel keytable
         if (interpret_keycode(&device->devlog, device, kbd, event.code, event.value)) {
-            LOG(1, "codetoksym failed!\n");
+            LOG(-1, "codetoksym failed!\n");
+            return -3;
         }
         printf("\n");
+    }
+
+	// check if the keystrokes are typed in a suspicious way
+    if (check_if_evil(device, config)) {
+        LOG(-1, "check_if_evil failed\n");
+        return -4;
     }
 
     return 0;

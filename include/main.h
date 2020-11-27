@@ -23,11 +23,10 @@ struct deviceInfo {
     char openfd[MAX_SIZE_PATH];
     int fd;
 
-    struct managedBuffer devlog;
-    struct timespec time_added;
+    struct managedBuffer devlog; // holds keystrokes pressed
 
     union {
-        struct xkb_state* xstate;
+        struct xkb_state* xstate; // xkbcommon state
 
         //kstate in bits: Capslock / CtrlR / CtrlL / ShiftR / ShiftL / Alt / Control / AltGr / Shift
         //from keyboard.h
@@ -35,5 +34,8 @@ struct deviceInfo {
     };
 
     int score;
+    struct managedBuffer strokesdiff; // holds time differences between keystrokes in queue
+    size_t currdiff;
 };
 #endif
+

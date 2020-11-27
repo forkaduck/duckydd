@@ -18,12 +18,14 @@ int has_tty(struct udevInfo udev)
         goto error_exit;
     }
 
-    if (udev_enumerate_add_match_subsystem(en, "tty") < 0) { // add match for "tty"
+	// match to the name starting with tty
+    if (udev_enumerate_add_match_subsystem(en, "tty") < 0) {
         LOG(-1, "udev_enumerate_add_match_subsystem failed\n");
         err = -2;
         goto error_exit;
     }
 
+	// match to major and minor number of the device
     if (udev_enumerate_add_match_property(en, "MAJOR", udev_device_get_property_value(udev.dev, "MAJOR")) < 0) {
         LOG(-1, "udev_enumerate_add_match_property failed\n");
         err = -3;
@@ -36,12 +38,14 @@ int has_tty(struct udevInfo udev)
         goto error_exit;
     }
 
+	// get iterator
     udev_enumerate_scan_devices(en);
 
     le = udev_enumerate_get_list_entry(en); // loop through all entities and search for a usb tty
     while (le != NULL) {
         char temp[10];
 
+		// find ttyACM or ttyUSB devices
         strcpy_s(temp, 6, find_file(udev_list_entry_get_name(le)));
         if (strncmp_ss(temp, "ttyACM", 6) == 0 || strncmp_ss(temp, "ttyUSB", 6) == 0) {
             udev_enumerate_unref(en);
@@ -63,17 +67,20 @@ int init_udev(struct udevInfo* udev)
         return -1;
     }
 
+	// create a new monitor from the context
     udev->mon = udev_monitor_new_from_netlink(udev->udev, "udev");
     if (udev->mon == NULL) {
         LOG(-1, "udev_monitor_new_from_netlink failed\n");
         return -2;
     }
 
+	// match only input devices
     if (udev_monitor_filter_add_match_subsystem_devtype(udev->mon, "input", NULL) < 0) {
         LOG(-1, "udev_monitor_filter_add_match_subsystem_devtype failed (input)\n");
         return -3;
     }
 
+	// start receiving events
     if (udev_monitor_enable_receiving(udev->mon) < 0) {
         LOG(-1, "udev_monitor_enable_receiving failed\n");
         return -4;
