@@ -107,7 +107,6 @@ int readconfig(const char path[], struct configInfo* config)
 
     config->logpath[0] = '\0';
 
-    config->logkeys = false;
     config->xkeymaps = false;
 
     config->minavrg.tv_sec = 0;
@@ -187,8 +186,8 @@ int readconfig(const char path[], struct configInfo* config)
 
             LOG(1, "Minavrg set to %lds %ldns\n", config->minavrg.tv_sec, config->minavrg.tv_nsec);
 
-            // sets the max score at which the device will be locked
         } else if (strncmp_ss(current, "maxscore", 7) == 0) {
+            // sets the max score at which the device will be locked
             config->maxcount = parse_long(&current[9], NULL);
 
             if (config->maxcount < 0) {
@@ -199,8 +198,8 @@ int readconfig(const char path[], struct configInfo* config)
 
             LOG(1, "Maxscore set to %ld\n", config->maxcount);
 
-            // path where the logfile will be safed
         } else if (strncmp_ss(current, "logpath", 6) == 0) {
+            // path where the logfile will be saved
             strcpy_s(config->logpath, MAX_SIZE_PATH, &current[8]);
 
             struct stat st;
@@ -227,16 +226,8 @@ int readconfig(const char path[], struct configInfo* config)
                     goto error_exit;
                 }
             }
-
-            // enable or disable keylogging (This option will probably be removed in a future update)
-        } else if (strncmp_ss(current, "keylogging", 9) == 0) {
-            if (parse_long(&current[11], NULL) == 1) {
-                config->logkeys = true;
-                LOG(1, "Logging all potential attacks!\n");
-            }
-
-            // enables the use of x server keymaps if they are available
         } else if (strncmp_ss(current, "usexkeymaps", 10) == 0) {
+            // enables the use of x server keymaps if they are available
             if (parse_long(&current[12], NULL) == 1) {
                 config->xkeymaps = true;
                 LOG(1, "Using x server keymaps!\n");

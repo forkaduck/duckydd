@@ -20,7 +20,6 @@ struct configInfo {
     char logpath[MAX_SIZE_PATH];
 
     // kbd
-    bool logkeys;
     bool xkeymaps;
 
     int configfd;

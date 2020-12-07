@@ -44,33 +44,14 @@ The config file format is pretty simple.
 
 \<parameter> \<option>
 
-__Note:__ THE -v OPTION IS FOR DEBUGING! 
+__Note:__ THE -v OPTION IS FOR DEBUGGING! 
 DISABLE IT IF YOU DON'T NEED IT BECAUSE IT COULD POTENTIALY LOG PASSWORDS!
 
 ## Config entries:
-`blacklist 29`
+`minavrg 0s 7327733ns`
 
-`blacklist 97`
-
-`blacklist 56`
-
-`blacklist 100`
-
-With this option you can configure which keys will lock the keyboard.
-
-A list of all the keycodes which identify the keys can be found in
-the input-event-codes header. If you don't want to search
-for that header then you can use the bash script called getkey.sh.
-The script will search for the header using locate and then list
-all of the key macros and their keycode.
-
-
-`maxtime 10s 0ns`
-
-This will set the maximum time after which the device will be
-removed from the watchlist. After that time period the daemon
-will simply ignore all events that are generated from that event file
-and will also stop logging keystrokes (if enabled).
+Sets the minimum average difference time between keystrokes. If the minium average of the
+currently typed string is smaller than the set value then the score will be incremented.
 
 
 `maxscore 0`
@@ -91,16 +72,6 @@ as a keyboard and a serial com port.
 
 After the keyboard has been locked you have to replug it
 to unlock it.
-
-
-`keylogging 1`
-
-Enables keylogging of potential attacks
-
-__Note:__ The keylogger logs all keypresses that are read from the event file
-until the specific keyboard times out. The keys pressed are then written to a
-file called key.log into the logpath.
-
 
 `logpath /`
 

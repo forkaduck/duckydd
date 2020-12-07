@@ -71,30 +71,27 @@ static int deinit_device(struct deviceInfo* device, struct configInfo* config, s
         device->fd = -1;
     }
 
-    // if keylogging was enabled
-    if (config->logkeys) {
-        if (device->devlog.b != NULL) {
-            if (device->score < 0) {
-                if (m_append_array_char(&device->devlog, "\n\0", 2)) {
-                    LOG(-1, "append_mbuffer_array_char failed!\n");
-                }
-                LOG(1, "-> %s\n", device->devlog.b);
-
-                // write keylog to the log file
-                if (write(kbd->outfd, (char*)device->devlog.b, device->devlog.size) < 0) {
-                    ERR("write");
-                }
+    if (device->devlog.b != NULL) {
+        if (device->score < 0) {
+            if (m_append_array_char(&device->devlog, "\n\0", 2)) {
+                LOG(-1, "append_mbuffer_array_char failed!\n");
             }
-            m_free(&device->devlog);
-        }
+            LOG(1, "-> %s\n", device->devlog.b);
 
-        if (config->xkeymaps && device->xstate != NULL) {
-            xkb_state_unref(device->xstate);
-            device->xstate = NULL;
+            // write keylog to the log file
+            if (write(kbd->outfd, (char*)device->devlog.b, device->devlog.size) < 0) {
+                ERR("write");
+            }
         }
-
-        m_free(&device->strokesdiff);
+        m_free(&device->devlog);
     }
+
+    if (config->xkeymaps && device->xstate != NULL) {
+        xkb_state_unref(device->xstate);
+        device->xstate = NULL;
+    }
+
+    m_free(&device->strokesdiff);
     return err;
 
 error_exit:
@@ -216,8 +213,7 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
         strcpy_s(m_deviceInfo(device)[fd].openfd, MAX_SIZE_PATH, location);
         m_deviceInfo(device)[fd].fd = fd;
 
-        if (config->logkeys && config->xkeymaps) {
-
+        if (config->xkeymaps) {
             // set the device state
             m_deviceInfo(device)[fd].xstate = xkb_x11_state_new_from_device(kbd->x.keymap, kbd->x.con, kbd->x.device_id);
             if (!m_deviceInfo(device)[fd].xstate) {
@@ -403,10 +399,8 @@ int main(int argc, char* argv[])
     }
 
     // init keylogging if supplied
-    if (config.logkeys) {
-        if (init_keylogging(NULL, &kbd, &config)) {
-            LOG(-1, "init_keylogging failed\n");
-        }
+    if (init_keylogging(NULL, &kbd, &config)) {
+        LOG(-1, "init_keylogging failed\n");
     }
 
     // SETUP EPOLL
@@ -475,10 +469,8 @@ int main(int argc, char* argv[])
                                 }
                             }
 
-                            if (config.logkeys) {
-                                if (logkey(&kbd, &m_deviceInfo(&device)[fd], event, &config)) {
-                                    LOG(0, "logkey failed!\n");
-                                }
+                            if (logkey(&kbd, &m_deviceInfo(&device)[fd], event, &config)) {
+                                LOG(0, "logkey failed!\n");
                             }
                         } else if (event.type == SYN_DROPPED) {
                             LOG(-1, "Sync dropped! Eventhandler not fast enough!\n");
@@ -526,9 +518,7 @@ int main(int argc, char* argv[])
 
     deinit_udev(&udev);
 
-    if (config.logkeys) {
-        deinit_keylogging(&kbd, &config);
-    }
+    deinit_keylogging(&kbd, &config);
     LOG(0, "Exiting!\n");
 
     return 0;

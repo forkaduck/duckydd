@@ -240,7 +240,6 @@ int init_keylogging(const char input[], struct keyboardInfo* kbd, struct configI
     return err;
 
 error_exit:
-    config->logkeys = false;
     LOG(-1, "Turning of keylogging because the init of both the kernel keymaps and libxkbcommon failed!\n");
     return err;
 }
