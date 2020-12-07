@@ -34,16 +34,26 @@ int init_signalhandler()
     sigemptyset(&action.sa_mask);
 
     // register nonfatal handler
-    if (sigaction(SIGHUP | SIGTERM | SIGINT, &action, NULL)) {
+    if (sigaction(SIGHUP, &action, NULL)) {
         ERR("sigaction");
         return -1;
+    }
+    
+    if (sigaction(SIGTERM, &action, NULL)) {
+        ERR("sigaction");
+        return -2;
+    }
+    
+    if (sigaction(SIGINT, &action, NULL)) {
+        ERR("sigaction");
+        return -3;
     }
 
     // ignore sigchild
     action.sa_handler = SIG_IGN;
     if (sigaction(SIGCHLD, &action, NULL)) {
         ERR("sigaction (SIGCHLD)");
-        return -2;
+        return -4;
     }
 
     return 0;
