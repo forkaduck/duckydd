@@ -15,7 +15,7 @@ struct keyboardInfo {
     int outfd;
 
     union {
-		// holds all xkbcommon variables
+        // holds all xkbcommon variables
         struct {
             struct xkb_context* ctx;
             struct xkb_keymap* keymap;
@@ -23,7 +23,7 @@ struct keyboardInfo {
             int32_t device_id;
         } x;
 
-		// holds all kernel maps
+        // holds all kernel maps
         struct {
             unsigned int keycode[MAX_SIZE_SCANCODE];
             unsigned short actioncode[MAX_NR_KEYMAPS][NR_KEYS];

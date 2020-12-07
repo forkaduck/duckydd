@@ -1,6 +1,8 @@
 #ifndef DUCKYDD_VARS_H
 #define DUCKYDD_VARS_H
 
+#include <stdbool.h>
+
 // general macros
 #define MAX_SIZE_EVENTS 40
 #define MAX_LOGLEVEL 2

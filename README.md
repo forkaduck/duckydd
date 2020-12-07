@@ -44,6 +44,9 @@ The config file format is pretty simple.
 
 \<parameter> \<option>
 
+__Note:__ THE -v OPTION IS FOR DEBUGING! 
+DISABLE IT IF YOU DON'T NEED IT BECAUSE IT COULD POTENTIALY LOG PASSWORDS!
+
 ## Config entries:
 `blacklist 29`
 

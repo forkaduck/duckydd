@@ -34,8 +34,9 @@ struct deviceInfo {
     };
 
     int score;
+
+    struct timespec lasttime;
     struct managedBuffer strokesdiff; // holds time differences between keystrokes in queue
     size_t currdiff;
 };
 #endif
-

@@ -4,7 +4,7 @@
 // signal handler function
 void signal_handler(int signal);
 
-// registers the sighandler 
+// registers the sighandler
 int init_signalhandler();
 
 #endif

@@ -54,7 +54,7 @@ static int deinit_device(struct deviceInfo* device, struct configInfo* config, s
 {
     int err = 0;
 
-    if (device->fd != -1 && device->openfd[0] != '\0') {
+    if (device->fd != -1) {
         if (epoll_ctl(epollfd, EPOLL_CTL_DEL, device->fd, NULL)) { // unregister the fd
             ERR("epoll_ctl");
             err = -1;
@@ -71,8 +71,8 @@ static int deinit_device(struct deviceInfo* device, struct configInfo* config, s
         device->fd = -1;
     }
 
-	// if keylogging was enabled
-    if (config->logkeys ) {
+    // if keylogging was enabled
+    if (config->logkeys) {
         if (device->devlog.b != NULL) {
             if (device->score < 0) {
                 if (m_append_array_char(&device->devlog, "\n\0", 2)) {
@@ -80,7 +80,7 @@ static int deinit_device(struct deviceInfo* device, struct configInfo* config, s
                 }
                 LOG(1, "-> %s\n", device->devlog.b);
 
-				// write keylog to the log file
+                // write keylog to the log file
                 if (write(kbd->outfd, (char*)device->devlog.b, device->devlog.size) < 0) {
                     ERR("write");
                 }
@@ -131,16 +131,16 @@ static int remove_fd(struct managedBuffer* device, struct configInfo* config, st
         {
             size_t i;
             size_t bigsize = 0;
-			
-			// find the biggest fd in the array
-            for (i = 0; i < device->size; i++) { 
+
+            // find the biggest fd in the array
+            for (i = 0; i < device->size; i++) {
                 if (m_deviceInfo(device)[i].openfd[0] != '\0') {
                     bigsize = i + 1;
                 }
             }
-			
-			// free the unnecessary space
-            if (bigsize < device->size) { 
+
+            // free the unnecessary space
+            if (bigsize < device->size) {
                 bool failed = false;
 
                 for (i = bigsize; i < device->size; i++) {
@@ -174,16 +174,16 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
     int fd;
 
     LOG(1, "Adding: %s\n", location);
-	
-	// open a fd to the devnode
-    fd = open(location, O_RDONLY | O_NONBLOCK); 
+
+    // open a fd to the devnode
+    fd = open(location, O_RDONLY | O_NONBLOCK);
     if (fd < 0) {
         LOG(-1, "open failed\n");
         err = -1;
         goto error_exit;
     }
 
-	// allocate more space if the fd doesn't fit
+    // allocate more space if the fd doesn't fit
     if (device->size <= fd) {
         size_t i;
         size_t prevsize;
@@ -195,8 +195,8 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
             goto error_exit;
         }
 
-		// initialize all members of the device array which haven't been used
-        for (i = prevsize; i < device->size; i++) { 
+        // initialize all members of the device array which haven't been used
+        for (i = prevsize; i < device->size; i++) {
             m_deviceInfo(device)[i].openfd[0] = '\0';
             m_deviceInfo(device)[i].fd = -1;
 
@@ -205,40 +205,41 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
             m_init(&m_deviceInfo(device)[i].devlog, sizeof(char));
 
             m_init(&m_deviceInfo(device)[i].strokesdiff, sizeof(struct timespec));
-			m_deviceInfo(device)[i].currdiff = 0;
+            m_deviceInfo(device)[i].currdiff = 0;
         }
     }
 
-	// allocate and set the openfd
-    if (m_deviceInfo(device)[fd].openfd[0] == '\0' && m_deviceInfo(device)[fd].fd == -1) {
+    // allocate and set the openfd
+    if (m_deviceInfo(device)[fd].fd == -1) {
+        size_t i;
+
         strcpy_s(m_deviceInfo(device)[fd].openfd, MAX_SIZE_PATH, location);
         m_deviceInfo(device)[fd].fd = fd;
 
         if (config->logkeys && config->xkeymaps) {
-            size_t i;
 
-			// set the device state
+            // set the device state
             m_deviceInfo(device)[fd].xstate = xkb_x11_state_new_from_device(kbd->x.keymap, kbd->x.con, kbd->x.device_id);
             if (!m_deviceInfo(device)[fd].xstate) {
                 LOG(-1, "xkb_x11_state_new_from_device failed!\n");
-				err = -3;
-				goto error_exit;
-            }
-
-			// allocate the array 
-            if(m_realloc(&m_deviceInfo(device)[fd].strokesdiff, 6)) {
-				LOG(-1, "m_realloc failed!\n");
-				err = -4;
-				goto error_exit;
-			}
-
-			// set every member to 0
-            for(i = 0; i < m_deviceInfo(device)[fd].strokesdiff.size; i++) {
-                memset_s(m_struct_timespec(&m_deviceInfo(device)[fd].strokesdiff), sizeof(struct timespec), 0);
+                err = -3;
+                goto error_exit;
             }
         }
 
-		// add a new fd which should be polled
+        // allocate the array
+        if (m_realloc(&m_deviceInfo(device)[fd].strokesdiff, 6)) {
+            LOG(-1, "m_realloc failed!\n");
+            err = -4;
+            goto error_exit;
+        }
+
+        // set every member to 0
+        for (i = 0; i < m_deviceInfo(device)[fd].strokesdiff.size; i++) {
+            memset_s(m_struct_timespec(&m_deviceInfo(device)[fd].strokesdiff), sizeof(struct timespec), 0);
+        }
+
+        // add a new fd which should be polled
         {
             struct epoll_event event;
             memset_s(&event, sizeof(struct epoll_event), 0);
@@ -247,13 +248,12 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
 
             if (epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event)) {
                 ERR("epoll_ctl");
-                err = -4;
+                err = -5;
                 goto error_exit;
             }
         }
-
     } else {
-        LOG(-1, "Somehow this element is already in use! There is something seriously wrong!\n");
+        LOG(-1, "Device fd already in use! There is something seriously wrong!\n");
         err = -5;
         goto error_exit;
     }
@@ -273,7 +273,7 @@ static int handle_udevev(struct managedBuffer* device, struct keyboardInfo* kbd,
     const char* devnode;
     const char* action;
 
-	// get a device context from the monitor
+    // get a device context from the monitor
     udev->dev = udev_monitor_receive_device(udev->mon);
     if (udev->dev == NULL) {
         LOG(-1, "udev_monitor_receive_device failed\n");
@@ -283,16 +283,16 @@ static int handle_udevev(struct managedBuffer* device, struct keyboardInfo* kbd,
 
     devnode = udev_device_get_devnode(udev->dev);
     action = udev_device_get_action(udev->dev);
-	
-	// device has a devnode
-    if (devnode != NULL && action != NULL) { 
+
+    // device has a devnode
+    if (devnode != NULL && action != NULL) {
         LOG(2, "%s %s -> %s [%s] | %s:%s\n",
             udev_device_get_devpath(udev->dev),
             action, devnode, udev_device_get_subsystem(udev->dev),
             udev_device_get_property_value(udev->dev, "MAJOR"),
             udev_device_get_property_value(udev->dev, "MINOR"));
-		
-		// add the devnode to the array
+
+        // add the devnode to the array
         if (strncmp_ss(action, "add", 3) == 0) {
             int fd;
 
@@ -306,12 +306,12 @@ static int handle_udevev(struct managedBuffer* device, struct keyboardInfo* kbd,
                 err = -2;
                 goto error_exit;
             }
-	
-		// remove the fd from the device array
+
+            // remove the fd from the device array
         } else if (strncmp_ss(action, "remove", 6) == 0) {
             int fd;
 
-			// search for the fd and remove it if possible
+            // search for the fd and remove it if possible
             fd = search_fd(device, devnode);
             if (fd >= 0) {
                 if (remove_fd(device, config, kbd, epollfd, fd)) {
@@ -424,7 +424,7 @@ int main(int argc, char* argv[])
         ERR("epoll_ctl");
         return -1;
     }
-	LOG(0,"Startup done!\n");
+    LOG(0, "Startup done!\n");
 
     // MAIN LOOP
     while (!brexit) {
@@ -463,9 +463,9 @@ int main(int argc, char* argv[])
                         // handle keyboard grabbing
                         if (event.type == EV_KEY) {
                             LOG(2, "fd=%d event.type=%d event.code=%d event.value=%d\n", fd, event.type, event.code, event.value);
-                            
-							if (m_deviceInfo(&device)[fd].score >= config.maxcount) {
-								if (event.value == 0) {
+
+                            if (m_deviceInfo(&device)[fd].score >= config.maxcount) {
+                                if (event.value == 0) {
                                     int ioctlarg = 1;
                                     if (ioctl(fd, EVIOCGRAB, &ioctlarg)) {
                                         ERR("ioctl");
@@ -488,7 +488,7 @@ int main(int argc, char* argv[])
             }
             events[i].events = 0;
         }
-        
+
         // reload config if SIGHUP is received
         if (reloadconfig) {
             LOG(0, "Reloading config file...\n");
@@ -504,7 +504,7 @@ int main(int argc, char* argv[])
     // close all open file descriptors to event devnodes
     if (m_deviceInfo(&device) != NULL) {
         for (i = 0; i < device.size; i++) {
-            if (m_deviceInfo(&device)[i].openfd[0] != '\0' && m_deviceInfo(&device)[i].fd != -1) {
+            if (m_deviceInfo(&device)[i].fd != -1) {
                 LOG(1, "fd %d still open!\n", i);
                 if (deinit_device(&m_deviceInfo(&device)[i], &config, &kbd, epollfd)) {
                     LOG(-1, "deinit_device failed!\n");
