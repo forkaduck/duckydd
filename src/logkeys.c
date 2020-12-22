@@ -78,6 +78,9 @@ static int load_x_keymaps(const char screen[], struct keyboardInfo* kbd, struct 
 {
     int err = 0;
 
+    // initalize x keymap
+    kbd->x.keymap = NULL;
+
     // create a new context
     kbd->x.ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
     if (!kbd->x.ctx) {
@@ -131,6 +134,15 @@ static int load_x_keymaps(const char screen[], struct keyboardInfo* kbd, struct 
 
 error_exit:
     config->xkeymaps = false;
+
+    // get rid of unused heap space
+    if (kbd->x.keymap) {
+        xkb_keymap_unref(kbd->x.keymap);
+    }
+
+    if (kbd->x.ctx) {
+        xkb_context_unref(kbd->x.ctx);
+    }
     return err;
 }
 
@@ -352,53 +364,52 @@ static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* devi
 
 static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
 {
-    size_t i;
-    struct timespec temp;
-
     // increment currdiff until wraparound
     if (device->currdiff < device->strokesdiff.size) {
+        struct timespec temp;
+
+        // get current time
+        if (clock_gettime(CLOCK_REALTIME, &temp)) {
+            ERR("clock_gettime");
+            return -1;
+        }
+
+        // caluclate time difference
+        m_struct_timespec(&device->strokesdiff)[device->currdiff].tv_sec = temp.tv_sec - device->lasttime.tv_sec;
+        m_struct_timespec(&device->strokesdiff)[device->currdiff].tv_nsec = temp.tv_nsec - device->lasttime.tv_nsec;
+
+        // save last value
+        device->lasttime.tv_sec = temp.tv_sec;
+        device->lasttime.tv_nsec = temp.tv_nsec;
+
+        // if the queue is filled then use it to calculate the average difference
+        if (m_struct_timespec(&device->strokesdiff)[device->strokesdiff.size - 1].tv_sec != 0 || m_struct_timespec(&device->strokesdiff)[device->strokesdiff.size - 1].tv_nsec != 0) {
+            size_t i;
+            struct timespec sum;
+
+            memset_s(&sum, sizeof(struct timespec), 0);
+            // calculate average of the array
+            for (i = 0; i < device->strokesdiff.size; i++) {
+                struct timespec curr;
+
+                curr = m_struct_timespec(&device->strokesdiff)[i];
+
+                sum.tv_sec += curr.tv_sec;
+                sum.tv_nsec += curr.tv_nsec;
+            }
+
+            sum.tv_sec /= device->strokesdiff.size;
+            sum.tv_nsec /= device->strokesdiff.size;
+
+            LOG(2, "Average time: %ds %dms\n", sum.tv_sec, sum.tv_nsec);
+
+            if (sum.tv_sec < config->minavrg.tv_sec || (sum.tv_sec == config->minavrg.tv_sec && sum.tv_nsec < config->minavrg.tv_nsec)) {
+                device->score++;
+            }
+        }
         device->currdiff++;
     } else {
         device->currdiff = 0;
-    }
-
-    // get current time
-    if (clock_gettime(CLOCK_REALTIME, &temp)) {
-        ERR("clock_gettime");
-        return -1;
-    }
-
-    // caluclate time difference
-    m_struct_timespec(&device->strokesdiff)[device->currdiff].tv_sec = temp.tv_sec - device->lasttime.tv_sec;
-    m_struct_timespec(&device->strokesdiff)[device->currdiff].tv_nsec = temp.tv_nsec - device->lasttime.tv_nsec;
-
-    // save last value
-    device->lasttime.tv_sec = temp.tv_sec;
-    device->lasttime.tv_nsec = temp.tv_nsec;
-
-    // if the queue is filled then use it to calculate the average difference
-    if (m_struct_timespec(&device->strokesdiff)[device->strokesdiff.size - 1].tv_sec != 0 || m_struct_timespec(&device->strokesdiff)[device->strokesdiff.size - 1].tv_nsec != 0) {
-        struct timespec sum;
-
-        memset_s(&sum, sizeof(struct timespec), 0);
-        // calculate average of the array
-        for (i = 0; i < device->strokesdiff.size; i++) {
-            struct timespec curr;
-
-            curr = m_struct_timespec(&device->strokesdiff)[i];
-
-            sum.tv_sec += curr.tv_sec;
-            sum.tv_nsec += curr.tv_nsec;
-        }
-
-        sum.tv_sec /= device->strokesdiff.size;
-        sum.tv_nsec /= device->strokesdiff.size;
-
-        LOG(2, "Average time: %ds %dms\n", sum.tv_sec, sum.tv_nsec);
-
-        if (sum.tv_sec < config->minavrg.tv_sec || (sum.tv_sec == config->minavrg.tv_sec && sum.tv_nsec < config->minavrg.tv_nsec)) {
-            device->score++;
-        }
     }
 
     return 0;

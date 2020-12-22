@@ -519,7 +519,7 @@ int main(int argc, char* argv[])
     deinit_udev(&udev);
 
     deinit_keylogging(&kbd, &config);
-    LOG(0, "Exiting!\n");
 
+    LOG(0, "All exit routines done!\n");
     return 0;
 }
