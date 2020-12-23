@@ -377,7 +377,7 @@ static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
         // caluclate time difference
         m_struct_timespec(&device->strokesdiff)[device->currdiff].tv_sec = temp.tv_sec - device->lasttime.tv_sec;
         m_struct_timespec(&device->strokesdiff)[device->currdiff].tv_nsec = temp.tv_nsec - device->lasttime.tv_nsec;
-
+        
         // save last value
         device->lasttime.tv_sec = temp.tv_sec;
         device->lasttime.tv_nsec = temp.tv_nsec;
@@ -387,7 +387,9 @@ static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
             size_t i;
             struct timespec sum;
 
-            memset_s(&sum, sizeof(struct timespec), 0);
+            sum.tv_sec = 0;
+            sum.tv_nsec = 0;
+
             // calculate average of the array
             for (i = 0; i < device->strokesdiff.size; i++) {
                 struct timespec curr;
@@ -401,7 +403,7 @@ static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
             sum.tv_sec /= device->strokesdiff.size;
             sum.tv_nsec /= device->strokesdiff.size;
 
-            LOG(2, "Average time: %ds %dms\n", sum.tv_sec, sum.tv_nsec);
+            LOG(2, "Average time: %ds %dns\n", sum.tv_sec, sum.tv_nsec);
 
             if (sum.tv_sec < config->minavrg.tv_sec || (sum.tv_sec == config->minavrg.tv_sec && sum.tv_nsec < config->minavrg.tv_nsec)) {
                 device->score++;

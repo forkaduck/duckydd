@@ -201,7 +201,11 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
             m_deviceInfo(device)[i].xstate = NULL;
             m_init(&m_deviceInfo(device)[i].devlog, sizeof(char));
 
+
             m_init(&m_deviceInfo(device)[i].strokesdiff, sizeof(struct timespec));
+            
+            m_deviceInfo(device)[i].lasttime.tv_sec = 0;
+            m_deviceInfo(device)[i].lasttime.tv_nsec = 0;
             m_deviceInfo(device)[i].currdiff = 0;
         }
     }
@@ -230,9 +234,10 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
             goto error_exit;
         }
 
-        // set every member to 0
+        // set every member of the strokediff array to 0
         for (i = 0; i < m_deviceInfo(device)[fd].strokesdiff.size; i++) {
-            memset_s(m_struct_timespec(&m_deviceInfo(device)[fd].strokesdiff), sizeof(struct timespec), 0);
+            m_struct_timespec(&m_deviceInfo(device)[fd].strokesdiff)[i].tv_sec = 0;
+            m_struct_timespec(&m_deviceInfo(device)[fd].strokesdiff)[i].tv_nsec = 0;
         }
 
         // add a new fd which should be polled
