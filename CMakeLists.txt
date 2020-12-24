@@ -39,7 +39,7 @@ file (GLOB SOURCES "src/*.c")
 add_executable(duckydd ${SOURCES})
 
 set (CMAKE_C_FLAGS_DEBUG "-g3")
-set (CMAKE_C_FLAGS_RELEASE "-O3")
+set (CMAKE_C_FLAGS_RELEASE "-O3 -fpie -D_FORTIFY_SOURCE=2")
 
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -fstack-protector-strong")
 
