@@ -240,7 +240,7 @@ int init_keylogging(const char input[], struct keyboardInfo* kbd, struct configI
         strcpy_s(path, sizeof(path), config->logpath);
         strcat_s(path, sizeof(path), file);
 
-        kbd->outfd = open(path, O_WRONLY | O_APPEND | O_CREAT | O_NOCTTY);
+        kbd->outfd = open(path, O_WRONLY | O_APPEND | O_CREAT | O_NOCTTY, S_IRUSR | S_IWUSR);
         if (kbd->outfd < 0) {
             ERR("open");
             err = -3;
