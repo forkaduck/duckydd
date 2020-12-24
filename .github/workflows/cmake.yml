@@ -22,8 +22,13 @@ jobs:
       # We'll use this as our working directory for all subsequent commands
       run: cmake -E make_directory ${{runner.workspace}}/build
 
-    - name: Installing needed dependencies
-      run: sudo apt -y install libudev-dev
+    - name: Install needed dependencies
+      # Install the needed libraries to compile the application
+      run: sudo apt -y install libudev-dev libxkbcommon-dev libxkbcommon-x11-dev
+
+    - name: Update submodules
+      # Update the submodules (safestringlib)
+      run: git submodule update --recursive
 
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
