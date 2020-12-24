@@ -22,6 +22,9 @@ jobs:
       # We'll use this as our working directory for all subsequent commands
       run: cmake -E make_directory ${{runner.workspace}}/build
 
+    - name: Installing needed dependencies
+      run: sudo apt -y install libudev-dev
+
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
       # access regardless of the host operating system
@@ -36,7 +39,7 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
-      run: cmake --build . --config $BUILD_TYPE
+      run: cmake --target Release --build . --config $BUILD_TYPE
 
 #    - name: Test
 #      working-directory: ${{runner.workspace}}/build
