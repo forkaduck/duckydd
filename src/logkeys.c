@@ -206,7 +206,7 @@ static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* devi
 {
     uint16_t modmask = 0;
 
-    LOG(1, "keycode:%d value:%d - typ:%d val:%d\n", code, value, KTYP(code), KVAL(code));
+    LOG(2, "keycode:%d value:%d - typ:%d val:%d\n", code, value, KTYP(code), KVAL(code));
 
     // Capslock / CtrlR / CtrlL / ShiftR / ShiftL / Alt / Control / AltGr / Shift
     switch (code) { //  (1 <= scancode <= 88) -> keycode == scancode
@@ -249,7 +249,7 @@ static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* devi
 
     if (!modmask) { // not a mod key
         if (value == KEY_STATE_PRESS) {
-            if (code < 0x1000) { // is not unicode
+            if (code < 0x1000) { // is not multi-character symbol
                 unsigned short actioncode;
 
                 if (KTYP(code) != KT_META) {
@@ -261,10 +261,10 @@ static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* devi
                 LOG(1, "actioncode:%d -> %c\n", actioncode, KVAL(actioncode));
 
                 if (m_append_member_char(buff, KVAL(actioncode))) {
-                    LOG(0, "m_append_member_char failed!\n");
+                    LOG(-1, "m_append_member_char failed!\n");
                 }
 
-            } else { // unicode  // TODO UNTESTED
+            } else { // TODO UNTESTED
                 unsigned short actioncode;
                 size_t i;
                 unsigned short limit;
@@ -277,7 +277,7 @@ static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* devi
                     limit |= 0xff << i;
                     if (code > limit) {
                         if (m_append_member_char(buff, actioncode & (0xff << (7 * i)))) {
-                            LOG(0, "m_append_member_char failed!\n");
+                            LOG(-1, "m_append_member_char failed!\n");
                         }
                     }
                 }
@@ -419,10 +419,6 @@ static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
     return 0;
 }
 
-static int check_log_rotation(struct deviceInfo* device) {
-    return 0;
-}
-
 int logkey(struct keyboardInfo* kbd, struct deviceInfo* device, struct input_event event, struct configInfo* config)
 {
     // if xkbcommon lib has initalized
@@ -483,9 +479,15 @@ int logkey(struct keyboardInfo* kbd, struct deviceInfo* device, struct input_eve
     }
 
     // check if a rotation of the recorded keystrokes is needed
-    if (check_log_rotation(device)) {
-        LOG(-1, "check_log_rotation failed\n");
-    }
+   if(device->devlog.size >= 100) {
+        LOG(0, "Rotating key log...\n");
+        
+        // write keylog to the log file
+        if (write(kbd->outfd, (char*)device->devlog.b, device->devlog.size) < 0) {
+            ERR("write");
+        }
 
+        m_realloc(&device->devlog, 0);
+    }
     return 0;
 }

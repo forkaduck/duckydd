@@ -6,24 +6,29 @@ and uses [Keep a Changelog](http://keepachangelog.com/) as a basis.
 
 ## [Unreleased]
 #### Added
+- New detection method which uses the average time difference between keystrokes
 - Help flag
 - Keylogging via kernel keytable (experimental)
 - System console fallbacks as a source for keymaps
 - Dynamic epoll_wait timeout
-- Added length check of function name and format string to _logger
+- Length check of function name and format string to _logger
 
 #### Changed
 - Moved safestringlib to lib folder
 
 ##### Config changes
-- Removed maxtime option
 - Added minavrg option (For more info have a look at README.md)
+- Removed maxtime option
+- Removed blacklist option
+- Removed maxtime option
+- Removed keylogging option
 
 #### Removed
 - Timeout of usb devices
 
 #### Fixed
-- Keystrokes being logged even if the device was not malicious
+- Memory leak when reloading the config
+
 
 ## [0.2.1] - 2020-06-29
 #### Changed
@@ -32,6 +37,7 @@ and uses [Keep a Changelog](http://keepachangelog.com/) as a basis.
 #### Fixed
 - Added fix for "No protocol specified"
 - Fixed keyspam bug
+
 
 ## [0.2.0] - 2020-06-15
 #### Added

