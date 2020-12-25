@@ -201,75 +201,6 @@ static int load_kernel_keymaps(const int fd, struct keyboardInfo* kbd, struct co
     return 0;
 }
 
-int init_keylogging(const char input[], struct keyboardInfo* kbd, struct configInfo* config)
-{
-    int err = 0;
-
-    // setup x keymaps
-    if (config->xkeymaps) {
-        if (load_x_keymaps(input, kbd, config)) {
-            LOG(-1, "init_xkeylogging failed!\n");
-        }
-    }
-
-    // use kernel keymaps
-    if (!config->xkeymaps) {
-        int fd;
-
-        // get a file descriptor to console 0
-        fd = open_console0();
-        if (fd < 0) {
-            LOG(-1, "Failed to open a file descriptor to a vaild console!\n");
-            err = -1;
-            goto error_exit;
-        }
-
-        // load keytable / accent table / and scancode translation table
-        if (load_kernel_keymaps(fd, kbd, config)) {
-            LOG(-1, "init_kernelkeylogging failed!\n");
-            err = -2;
-            goto error_exit;
-        }
-    }
-
-    // create keylog file
-    {
-        const char file[] = { "/key.log" };
-        char path[sizeof(config->logpath) + sizeof(file)];
-
-        strcpy_s(path, sizeof(path), config->logpath);
-        strcat_s(path, sizeof(path), file);
-
-        kbd->outfd = open(path, O_WRONLY | O_APPEND | O_CREAT | O_NOCTTY, S_IRUSR | S_IWUSR);
-        if (kbd->outfd < 0) {
-            ERR("open");
-            err = -3;
-            goto error_exit;
-        }
-    }
-
-    LOG(1, "Keylogging ready!\n");
-    return err;
-
-error_exit:
-    LOG(-1, "Turning of keylogging because the init of both the kernel keymaps and libxkbcommon failed!\n");
-    return err;
-}
-
-int deinit_keylogging(struct keyboardInfo* kbd, struct configInfo* config)
-{
-    if (close(kbd->outfd)) {
-        ERR("close");
-    }
-
-    if (config->xkeymaps) {
-        xkb_keymap_unref(kbd->x.keymap);
-        xkb_context_unref(kbd->x.ctx);
-        xcb_disconnect(kbd->x.con);
-    }
-    return 0;
-}
-
 // translate scancode to string
 static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* device, struct keyboardInfo* kbd, unsigned int code, uint8_t value)
 {
@@ -362,6 +293,77 @@ static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* devi
     return 0;
 }
 
+
+int init_keylogging(const char input[], struct keyboardInfo* kbd, struct configInfo* config)
+{
+    int err = 0;
+
+    // setup x keymaps
+    if (config->xkeymaps) {
+        if (load_x_keymaps(input, kbd, config)) {
+            LOG(-1, "init_xkeylogging failed!\n");
+        }
+    }
+
+    // use kernel keymaps
+    if (!config->xkeymaps) {
+        int fd;
+
+        // get a file descriptor to console 0
+        fd = open_console0();
+        if (fd < 0) {
+            LOG(-1, "Failed to open a file descriptor to a vaild console!\n");
+            err = -1;
+            goto error_exit;
+        }
+
+        // load keytable / accent table / and scancode translation table
+        if (load_kernel_keymaps(fd, kbd, config)) {
+            LOG(-1, "init_kernelkeylogging failed!\n");
+            err = -2;
+            goto error_exit;
+        }
+    }
+
+    // create keylog file
+    {
+        const char file[] = { "/key.log" };
+        char path[sizeof(config->logpath) + sizeof(file)];
+
+        strcpy_s(path, sizeof(path), config->logpath);
+        strcat_s(path, sizeof(path), file);
+
+        kbd->outfd = open(path, O_WRONLY | O_APPEND | O_CREAT | O_NOCTTY, S_IRUSR | S_IWUSR);
+        if (kbd->outfd < 0) {
+            ERR("open");
+            err = -3;
+            goto error_exit;
+        }
+    }
+
+    LOG(1, "Keylogging ready!\n");
+    return err;
+
+error_exit:
+    LOG(-1, "Turning of keylogging because the init of both the kernel keymaps and libxkbcommon failed!\n");
+    return err;
+}
+
+int deinit_keylogging(struct keyboardInfo* kbd, struct configInfo* config)
+{
+    if (close(kbd->outfd)) {
+        ERR("close");
+    }
+
+    if (config->xkeymaps) {
+        xkb_keymap_unref(kbd->x.keymap);
+        xkb_context_unref(kbd->x.ctx);
+        xcb_disconnect(kbd->x.con);
+    }
+    return 0;
+}
+
+
 static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
 {
     // increment currdiff until wraparound
@@ -414,6 +416,10 @@ static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
         device->currdiff = 0;
     }
 
+    return 0;
+}
+
+static int check_log_rotation(struct deviceInfo* device) {
     return 0;
 }
 
@@ -470,10 +476,15 @@ int logkey(struct keyboardInfo* kbd, struct deviceInfo* device, struct input_eve
         printf("\n");
     }
 
-    // check if the keystrokes are typed in a suspicious way
+    // check if the keystrokes are typed in a manner not typical to human typing
     if (check_if_evil(device, config)) {
         LOG(-1, "check_if_evil failed\n");
         return -4;
+    }
+
+    // check if a rotation of the recorded keystrokes is needed
+    if (check_log_rotation(device)) {
+        LOG(-1, "check_log_rotation failed\n");
     }
 
     return 0;
