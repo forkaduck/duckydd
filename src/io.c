@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "config.h"
 #include "io.h"
 #include "mbuffer.h"
 #include "safe_lib.h"
@@ -281,14 +282,14 @@ int handleargs(int argc, char* argv[], struct argInfo* data)
 
             // shows help
             case 'h':
-                printf("duckydd v%s\n"
+                printf("duckydd %s\n"
                        "Usage: duckydd [Options]\n"
                        "\t\t-c <file>\tSpecify a config file\n"
                        "\t\t-d\t\tDaemonize the process\n"
                        "\t\t-v\t\tIncrease verbosity of the console output\n"
                        "\t\t-h\t\tShow this help section\n\n"
                        "For config options please have a look at the README.md\n\n",
-                    VER);
+                    GIT_VERSION);
                 help = true;
                 break;
 
