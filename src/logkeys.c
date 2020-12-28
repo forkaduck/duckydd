@@ -478,7 +478,7 @@ int logkey(struct keyboardInfo* kbd, struct deviceInfo* device, struct input_eve
         return -4;
     }
 
-    // check if a rotation of the recorded keystrokes is needed
+    // rotate keylog after 100 chars in the buffer
    if(device->devlog.size >= 100) {
         LOG(0, "Rotating key log...\n");
         

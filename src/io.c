@@ -284,10 +284,11 @@ int handleargs(int argc, char* argv[], struct argInfo* data)
             case 'h':
                 printf("duckydd %s\n"
                        "Usage: duckydd [Options]\n"
-                       "\t\t-c <file>\tSpecify a config file\n"
+                       "\t\t-c <file>\tSpecify a config file path\n"
                        "\t\t-d\t\tDaemonize the process\n"
-                       "\t\t-v\t\tIncrease verbosity of the console output\n"
-                       "\t\t-h\t\tShow this help section\n\n"
+                       "\t\t-v\t\tIncrease verbosity of the console output (The maximum verbosity is 2)\n"
+                       "\t\t-h\t\tShows this help section\n\n"
+                       "THE -v OPTION CAN POTENTIALY EXPOSE PASSWORDS!!!\n\n"
                        "For config options please have a look at the README.md\n\n",
                     GIT_VERSION);
                 help = true;

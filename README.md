@@ -3,14 +3,17 @@ This daemon protects from pretty much every HID injection attack.
 
 ## Compatibility Note:
 This daemon depends on the following libraries:
+```
 udev
 xkbcommon
 xkbcommon-x11
 xcb
 libc
+```
 
-At the moment you will have to compile the binary with the x libraries.
-But you can disable the use of the xkb extension later in the config.
+At the moment you will have to link against the x libraries even if they are
+not used. But you can disable the use of the x keymaps retrieved from the x server
+in the config later on.
 
 Systemd is not required although you will have to write your own init script.
 
@@ -28,16 +31,26 @@ If you use Systemd then you can install the project with a service file like thi
 
 `sudo make install`
 
-## Configuration:
-The config file should be located under /etc/duckydd/duckydd.conf.
+## Arguments:
+```
+Usage: duckydd [Options]
+		-c <file>	Specify a config file path
+		-d		    Daemonize the process
+		-v		    Increase verbosity of the console output (The maximum verbosity is 2)
+		-h		    Shows this help section
+```
 
-Config file format:
-\<parameter> \<option>
-
-__Note:__ THE -v OPTION IS FOR DEBUGGING! 
-DISABLE IT IF YOU DON'T NEED IT BECAUSE IT COULD POTENTIALY LOG PASSWORDS!
+__Important Note:__
+THE -v OPTION IS FOR DEBUGGING! 
+DISABLE IT IF YOU DON'T NEED IT BECAUSE IT COULD POTENTIALY LOG AND THEIRFORE EXPOSE PASSWORDS!
 
 ## Config entries:
+If you installed the project with the command above then the config file should be located under /etc/duckydd/duckydd.conf.
+
+The file format is as follows:
+\<parameter> \<option>
+
+
 `minavrg 0s 7327733ns`
 
 Sets the minimum average difference time between keystrokes. If the minium average of the
@@ -78,7 +91,8 @@ using environment variables.
 
 If this option is enabled the daemon will first try to initalize the x dependent keymap.
 If the use of the x keymap fails then the daemon falls back to kernel keymaps.
-At the moment the use of the kernel keymaps is **experimental** at best.
+At the moment the use of the kernel keymaps is **experimental** although alphanumberic characters
+of the english language work.
 
 ## Uninstall:
 ```
@@ -95,4 +109,4 @@ To do this issue the following command as the local user:
 
 `xhost local:root`
 
-You will have to reload the daemon after doing this.
+You will have to restart the daemon after doing this.
