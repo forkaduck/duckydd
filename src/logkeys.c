@@ -287,10 +287,7 @@ static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* devi
         }
 
     } else {
-        char* bin = binexpand(device->kstate, 8);
-
-        LOG(1, "kstate:%s\n", bin);
-        free(bin);
+        LOG(1, "kstate:%s\n", device->kstate);
     }
     return 0;
 }
@@ -346,7 +343,7 @@ int init_keylogging(const char input[], struct keyboardInfo* kbd, struct configI
     return err;
 
 error_exit:
-    LOG(-1, "Turning of keylogging because the init of both the kernel keymaps and libxkbcommon failed!\n");
+    LOG(-1, "Exiting because the init of both the kernel keymaps and libxkbcommon failed!\n");
     return err;
 }
 

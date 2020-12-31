@@ -403,6 +403,7 @@ int main(int argc, char* argv[])
     // init keylogging if supplied
     if (init_keylogging(NULL, &kbd, &config)) {
         LOG(-1, "init_keylogging failed\n");
+        return -1;
     }
 
     // SETUP EPOLL
