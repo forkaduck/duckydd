@@ -45,10 +45,10 @@
 #include "mbuffertemplate.h"
 
 // global variables
-bool brexit;
-bool reloadconfig;
-bool daemonize;
-short loglvl;
+bool g_brexit;
+bool g_reloadconfig;
+bool g_daemonize;
+short g_loglevel;
 
 static int deinit_device(struct deviceInfo* device, struct configInfo* config, struct keyboardInfo* kbd, const int epollfd)
 {
@@ -341,10 +341,10 @@ int main(int argc, char* argv[])
     struct epoll_event udevevent;
 
     // reset global variables
-    brexit = false;
-    reloadconfig = false;
-    daemonize = false;
-    loglvl = 0;
+    g_brexit = false;
+    g_reloadconfig = false;
+    g_daemonize = false;
+    g_loglevel = 0;
 
     // handle non root
     if (getuid() != 0) {
@@ -377,7 +377,7 @@ int main(int argc, char* argv[])
         return -1;
     }
     // daemonize if supplied
-    if (daemonize) {
+    if (g_daemonize) {
         if (become_daemon(config)) {
             LOG(-1, "become_daemon failed!\n");
             return -1;
@@ -424,7 +424,7 @@ int main(int argc, char* argv[])
     LOG(0, "Startup done!\n");
 
     // MAIN LOOP
-    while (!brexit) {
+    while (!g_brexit) {
         size_t i;
         int readfds;
         struct epoll_event events[MAX_SIZE_EVENTS];
@@ -486,14 +486,14 @@ int main(int argc, char* argv[])
         }
 
         // reload config if SIGHUP is received
-        if (reloadconfig) {
+        if (g_reloadconfig) {
             LOG(0, "Reloading config file...\n");
 
             if (readconfig(arg.configpath, &config)) {
                 LOG(-1, "readconfig failed\n");
                 return -1;
             }
-            reloadconfig = false;
+            g_reloadconfig = false;
         }
     }
 

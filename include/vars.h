@@ -19,9 +19,9 @@
 #define MAX_SIZE_KBSTRING 512
 
 // global variables
-extern bool brexit;
-extern bool reloadconfig;
-extern bool daemonize;
-extern short loglvl;
+extern bool g_brexit;
+extern bool g_reloadconfig;
+extern bool g_daemonize;
+extern short g_loglevel;
 
 #endif

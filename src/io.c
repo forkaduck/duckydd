@@ -268,13 +268,13 @@ int handleargs(int argc, char* argv[], struct argInfo* data)
 
             // daemonize the daemon
             case 'd':
-                daemonize = true;
+                g_daemonize = true;
                 break;
 
             // increase the verbosity level
             case 'v':
-                if (loglvl < MAX_LOGLEVEL) {
-                    loglvl += 1;
+                if (g_loglevel < MAX_LOGLEVEL) {
+                    g_loglevel += 1;
                 } else {
                     LOG(0, "Can't increment loglevel any more!\n");
                 }
@@ -318,7 +318,7 @@ int handleargs(int argc, char* argv[], struct argInfo* data)
 void _logger(short loglevel, const char func[], const char format[], ...)
 {
     // check for a format string bigger than the max
-    if (loglevel <= loglvl) {
+    if (loglevel <= g_loglevel) {
         if (strnlen(func, MAX_SIZE_FORMAT_STRING) <= MAX_SIZE_FORMAT_STRING
             && strnlen(format, MAX_SIZE_FUNCTION_NAME) <= MAX_SIZE_FUNCTION_NAME) {
 
@@ -342,7 +342,7 @@ void _logger(short loglevel, const char func[], const char format[], ...)
                 break;
             }
 
-            if (loglvl > 0) {
+            if (g_loglevel > 0) {
                 sprintf(appended, "[%c][%s] %s", prefix, func, format);
             } else {
                 sprintf(appended, "[%c] %s", prefix, format);

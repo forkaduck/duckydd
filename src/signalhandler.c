@@ -13,11 +13,11 @@ void handle_signal(int signal)
     switch (signal) {
     case SIGINT:
     case SIGTERM:
-        brexit = true; // exit cleanly
+        g_brexit = true; // exit cleanly
         break;
 
     case SIGHUP:
-        reloadconfig = true; // reload config
+        g_reloadconfig = true; // reload config
         break;
 
     default:
