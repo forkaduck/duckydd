@@ -296,13 +296,14 @@ int handleargs(int argc, char* argv[], struct argInfo* data)
 
             default:
                 LOG(0, "%s is not a recognized option. \n", argv[i]);
+                unrecognized = true;
                 break;
             }
         }
     }
 
     if (unrecognized) {
-        LOG(0, "Try -h for a list of supported options\n");
+        LOG(0, "One or more options where not recognized! You can try the -h argument for a list of supported options.\n");
     }
 
     if (help) {
@@ -317,37 +318,39 @@ int handleargs(int argc, char* argv[], struct argInfo* data)
 void _logger(short loglevel, const char func[], const char format[], ...)
 {
     // check for a format string bigger than the max
-    if (loglevel <= loglvl && strnlen(func, MAX_SIZE_FORMAT_STRING) <= MAX_SIZE_FORMAT_STRING
-        && strnlen(format, MAX_SIZE_FUNCTION_NAME) <= MAX_SIZE_FUNCTION_NAME) {
+    if (loglevel <= loglvl) {
+        if (strnlen(func, MAX_SIZE_FORMAT_STRING) <= MAX_SIZE_FORMAT_STRING
+            && strnlen(format, MAX_SIZE_FUNCTION_NAME) <= MAX_SIZE_FUNCTION_NAME) {
 
-        va_list args;
-        va_start(args, format);
+            va_list args;
+            va_start(args, format);
 
-        char appended[MAX_SIZE_FORMAT_STRING + MAX_SIZE_FUNCTION_NAME];
-        char prefix;
-        FILE* fd;
+            char appended[MAX_SIZE_FORMAT_STRING + MAX_SIZE_FUNCTION_NAME];
+            char prefix;
+            FILE* fd;
 
-        // change prefix depending on loglevel
-        switch (loglevel) {
-        case -1:
-            prefix = '!';
-            fd = stderr;
-            break;
+            // change prefix depending on loglevel
+            switch (loglevel) {
+            case -1:
+                prefix = '!';
+                fd = stderr;
+                break;
 
-        default:
-            prefix = '*';
-            fd = stdout;
-            break;
+            default:
+                prefix = '*';
+                fd = stdout;
+                break;
+            }
+
+            if (loglvl > 0) {
+                sprintf(appended, "[%c][%s] %s", prefix, func, format);
+            } else {
+                sprintf(appended, "[%c] %s", prefix, format);
+            }
+            vfprintf(fd, appended, args);
+
+            va_end(args);
         }
-
-        if (func != NULL) {
-            sprintf(appended, "[%c][%s] %s", prefix, func, format);
-        } else {
-            sprintf(appended, "[%c] %s", prefix, format);
-        }
-        vfprintf(fd, appended, args);
-
-        va_end(args);
     }
 }
 
