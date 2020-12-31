@@ -180,7 +180,7 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
     }
 
     // allocate more space if the fd doesn't fit
-    if (device->size <= fd) {
+    if (device->size <= (size_t)fd) {
         size_t i;
         size_t prevsize;
 
@@ -330,8 +330,6 @@ error_exit:
 
 int main(int argc, char* argv[])
 {
-    size_t i;
-
     struct argInfo arg;
     struct udevInfo udev;
     struct configInfo config;
@@ -426,6 +424,7 @@ int main(int argc, char* argv[])
 
     // MAIN LOOP
     while (!brexit) {
+        size_t i;
         int readfds;
         struct epoll_event events[MAX_SIZE_EVENTS];
 
@@ -440,7 +439,7 @@ int main(int argc, char* argv[])
             }
         }
 
-        for (i = 0; i < readfds; i++) {
+        for (i = 0; i < (size_t)readfds; i++) {
             int fd = events[i].data.fd;
 
             if ((events[i].events & EPOLLIN) > 0) {
@@ -499,6 +498,8 @@ int main(int argc, char* argv[])
 
     // close all open file descriptors to event devnodes
     if (m_deviceInfo(&device) != NULL) {
+        size_t i;
+
         for (i = 0; i < device.size; i++) {
             if (m_deviceInfo(&device)[i].fd != -1) {
                 LOG(1, "fd %d still open!\n", i);

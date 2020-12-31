@@ -146,7 +146,7 @@ error_exit:
     return err;
 }
 
-static int load_kernel_keymaps(const int fd, struct keyboardInfo* kbd, struct configInfo* config)
+static int load_kernel_keymaps(const int fd, struct keyboardInfo* kbd)
 {
     size_t i, k;
 
@@ -233,12 +233,14 @@ static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* devi
     case KEY_RIGHTALT:
     case KEY_LEFTALT:
         modmask |= 1 << 3;
+        break;
 
-        /*case ??: //TODO
+    /*case ??: //TODO
                 modmask |= 1 << 1;*/
 
     case KEY_CAPSLOCK:
         modmask |= 1 << 8;
+        break;
     }
 
     if (value) { // change modifier state
@@ -293,7 +295,6 @@ static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* devi
     return 0;
 }
 
-
 int init_keylogging(const char input[], struct keyboardInfo* kbd, struct configInfo* config)
 {
     int err = 0;
@@ -318,7 +319,7 @@ int init_keylogging(const char input[], struct keyboardInfo* kbd, struct configI
         }
 
         // load keytable / accent table / and scancode translation table
-        if (load_kernel_keymaps(fd, kbd, config)) {
+        if (load_kernel_keymaps(fd, kbd)) {
             LOG(-1, "init_kernelkeylogging failed!\n");
             err = -2;
             goto error_exit;
@@ -363,7 +364,6 @@ int deinit_keylogging(struct keyboardInfo* kbd, struct configInfo* config)
     return 0;
 }
 
-
 static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
 {
     // increment currdiff until wraparound
@@ -379,7 +379,7 @@ static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
         // caluclate time difference
         m_struct_timespec(&device->strokesdiff)[device->currdiff].tv_sec = temp.tv_sec - device->lasttime.tv_sec;
         m_struct_timespec(&device->strokesdiff)[device->currdiff].tv_nsec = temp.tv_nsec - device->lasttime.tv_nsec;
-        
+
         // save last value
         device->lasttime.tv_sec = temp.tv_sec;
         device->lasttime.tv_nsec = temp.tv_nsec;
@@ -479,9 +479,9 @@ int logkey(struct keyboardInfo* kbd, struct deviceInfo* device, struct input_eve
     }
 
     // rotate keylog after 100 chars in the buffer
-   if(device->devlog.size >= 100) {
+    if (device->devlog.size >= 100) {
         LOG(0, "Rotating key log...\n");
-        
+
         // write keylog to the log file
         if (write(kbd->outfd, (char*)device->devlog.b, device->devlog.size) < 0) {
             ERR("write");

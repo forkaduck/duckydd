@@ -251,7 +251,7 @@ error_exit:
 
 int handleargs(int argc, char* argv[], struct argInfo* data)
 {
-    size_t i;
+    int i;
     bool unrecognized = false;
     bool help = false;
     data->configpath[0] = '\0';
@@ -312,29 +312,6 @@ int handleargs(int argc, char* argv[], struct argInfo* data)
         return -1;
     }
     return 0;
-}
-
-// writes a hex number as binary into a dynamic char buffer
-char* binexpand(uint8_t bin, size_t size)
-{
-    size_t k;
-    char* out;
-
-    out = malloc((size + 1) * sizeof(char));
-    if (out == NULL) {
-        ERR("malloc");
-        return NULL;
-    }
-
-    for (k = 0; k < size; k++) {
-        if (bin & (0x1 << (size - (k - 1)))) {
-            out[k] = '1';
-        } else {
-            out[k] = '0';
-        }
-    }
-    out[size] = '\0';
-    return out;
 }
 
 void _logger(short loglevel, const char func[], const char format[], ...)
