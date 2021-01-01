@@ -289,8 +289,11 @@ int handleargs(int argc, char* argv[], struct argInfo* data)
                        "\t\t-v\t\tIncrease verbosity of the console output (The maximum verbosity is 2)\n"
                        "\t\t-h\t\tShows this help section\n\n"
                        "THE -v OPTION CAN POTENTIALY EXPOSE PASSWORDS!!!\n\n"
-                       "For config options please have a look at the README.md\n\n",
-                    GIT_VERSION);
+                       "For config options please have a look at the README.md\n\n"
+#ifdef ENABLE_XKB_EXTENSION 
+                       "xkbcommon support compiled in!\n\n"
+#endif
+                    ,GIT_VERSION);
                 help = true;
                 break;
 

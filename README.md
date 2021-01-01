@@ -5,31 +5,37 @@ This daemon protects from pretty much every HID injection attack.
 This daemon depends on the following libraries:
 ```
 udev
-xkbcommon
-xkbcommon-x11
-xcb
 libc
 ```
 
-At the moment you will have to link against the x libraries even if they are
-not used. But you can disable the use of the x keymaps retrieved from the x server
-in the config later on.
+The following libraries can optionaly be linked against to provide
+the daemon with keymaps from the x server.
+```
+xkbcommon
+xkbcommon-x11
+xcb
+```
 
-Systemd is not required although you will have to write your own init script.
+Systemd is not required although you will have to write your own init script
+if you don't want to use the provided service file.
 
 ## Install:
 ```
-git clone --recurse-submodules -j8 https://github.com/0xDEADC0DEx/duckydd
-cd duckydd
-mkdir build
-cd build
-cmake ..
-make
+# Clone the code and the submodule
+$ git clone --recurse-submodules -j8 https://github.com/0xDEADC0DEx/duckydd
+$ cd duckydd
+
+# Compile the code in the build directory
+# (You can optionaly change the -DENABLE_XKB_EXTENSION flag to OFF if you don't want to link against x server dependent libraries)
+$ cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_XKB_EXTENSION=ON && cmake --build build
 ```
 
 If you use Systemd then you can install the project with a service file like this:
 
-`sudo make install`
+```
+cd build
+sudo make install
+```
 
 ## Arguments:
 ```

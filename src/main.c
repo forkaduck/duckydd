@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <xkbcommon/xkbcommon-x11.h>
 
+#include "config.h"
 #include "daemon.h"
 #include "io.h"
 #include "logkeys.h"
