@@ -14,6 +14,7 @@
 #include <xkbcommon/xkbcommon-x11.h>
 #include <xkbcommon/xkbcommon.h>
 
+#include "config.h"
 #include "io.h"
 #include "logkeys.h"
 #include "main.h"
@@ -74,6 +75,7 @@ static int open_console0()
     return -1;
 }
 
+#ifdef ENABLE_XKB_EXTENSION
 static int load_x_keymaps(const char screen[], struct keyboardInfo* kbd, struct configInfo* config)
 {
     int err = 0;
@@ -145,6 +147,7 @@ error_exit:
     }
     return err;
 }
+#endif
 
 static int load_kernel_keymaps(const int fd, struct keyboardInfo* kbd)
 {
@@ -235,7 +238,7 @@ static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* devi
         modmask |= 1 << 3;
         break;
 
-    /*case ??: //TODO
+        /*case ??: //TODO
                 modmask |= 1 << 1;*/
 
     case KEY_CAPSLOCK:
@@ -298,9 +301,13 @@ int init_keylogging(const char input[], struct keyboardInfo* kbd, struct configI
 
     // setup x keymaps
     if (config->xkeymaps) {
+#ifdef ENABLE_XKB_EXTENSION
         if (load_x_keymaps(input, kbd, config)) {
             LOG(-1, "init_xkeylogging failed!\n");
         }
+#else
+        LOG(0, "The daemon was compiled without xkb support!\n");
+#endif
     }
 
     // use kernel keymaps
@@ -353,11 +360,13 @@ int deinit_keylogging(struct keyboardInfo* kbd, struct configInfo* config)
         ERR("close");
     }
 
+#ifdef ENABLE_XKB_EXTENSION
     if (config->xkeymaps) {
         xkb_keymap_unref(kbd->x.keymap);
         xkb_context_unref(kbd->x.ctx);
         xcb_disconnect(kbd->x.con);
     }
+#endif
     return 0;
 }
 
@@ -418,6 +427,7 @@ static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
 
 int logkey(struct keyboardInfo* kbd, struct deviceInfo* device, struct input_event event, struct configInfo* config)
 {
+#ifdef ENABLE_XKB_EXTENSION
     // if xkbcommon lib has initalized
     if (config->xkeymaps) {
         xkb_keycode_t keycode = event.code + 8;
@@ -459,8 +469,10 @@ int logkey(struct keyboardInfo* kbd, struct deviceInfo* device, struct input_eve
                 LOG(-1, "Keyevent without valid key in map (%d)!\n", keycode);
             }
         }
+    }
+#endif
 
-    } else {
+    if (!config->xkeymaps) {
         // interpret the keycode using the kernel keytable
         if (interpret_keycode(&device->devlog, device, kbd, event.code, event.value)) {
             LOG(-1, "codetoksym failed!\n");

@@ -85,10 +85,12 @@ static int deinit_device(struct deviceInfo* device, struct configInfo* config, s
         m_free(&device->devlog);
     }
 
+#ifdef ENABLE_XKB_EXTENSION
     if (config->xkeymaps && device->xstate != NULL) {
         xkb_state_unref(device->xstate);
         device->xstate = NULL;
     }
+#endif
 
     m_free(&device->strokesdiff);
     return err;
@@ -216,6 +218,7 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
         strcpy_s(m_deviceInfo(device)[fd].openfd, MAX_SIZE_PATH, location);
         m_deviceInfo(device)[fd].fd = fd;
 
+#ifdef ENABLE_XKB_EXTENSION
         if (config->xkeymaps) {
             // set the device state
             m_deviceInfo(device)[fd].xstate = xkb_x11_state_new_from_device(kbd->x.keymap, kbd->x.con, kbd->x.device_id);
@@ -225,6 +228,7 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
                 goto error_exit;
             }
         }
+#endif
 
         // allocate the array
         if (m_realloc(&m_deviceInfo(device)[fd].strokesdiff, 6)) {

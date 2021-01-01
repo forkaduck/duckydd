@@ -1,11 +1,14 @@
 #!/bin/bash
 
-vernum=$(git describe --dirty --always --tags)
-
 out+="#ifndef DUCKYDD_CONFIG_H\n"
-out+="#define DUCKYDD_CONFIG_H\n"
+out+="#define DUCKYDD_CONFIG_H\n\n"
 
-out+="#define GIT_VERSION \"$vernum\"\n"
+out+="#define GIT_VERSION \"$(git describe --dirty --always --tags)\"\n"
+
+if [[ $1 == 'ON' ]]; then 
+    echo "Enabling xkb extension depending code..."
+    out+="#define ENABLE_XKB_EXTENSION\n"
+fi
 
 out+="#endif\n"
 

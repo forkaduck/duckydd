@@ -33,12 +33,15 @@ add_executable(duckydd ${SOURCES})
 # Set compile flags
 set (CMAKE_C_FLAGS_DEBUG "-g3")
 set (CMAKE_C_FLAGS_RELEASE "-O3 -fpie -D_FORTIFY_SOURCE=2")
-
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -fstack-protector-strong")
+
+# Options
+option(ENABLE_XKB_EXTENSION "Enable linking to xkbcommon" ON)
+message("Compile xcbcommon support? ${ENABLE_XKB_EXTENSION}")
 
 # Run config script
 add_custom_target(
-    Genconf ALL ./gen_configh.sh
+    Genconf ALL ./gen_configh.sh ${ENABLE_XKB_EXTENSION}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     VERBATIM USES_TERMINAL
     BYPRODUCTS ${CMAKE_SOURCE_DIR}/include/config.h
@@ -48,10 +51,15 @@ add_dependencies(duckydd Genconf)
 
 # Find libs
 find_library(UDEV_LIB udev)
+find_library(MATH_LIB m)
+
+
+# Find xkb libs
+if(${ENABLE_XKB_EXTENSION})
 find_library(XKBCOMMON_LIB xkbcommon)
 find_library(XKBCOMMON_X11_LIB xkbcommon-x11)
 find_library(XCB_LIB xcb)
-find_library(MATH_LIB m)
+endif()
 
 # Compile safestringlib
 ExternalProject_Add(safestringlib_download
@@ -77,16 +85,23 @@ set_target_properties(safestringlib PROPERTIES
 
 add_dependencies(duckydd safestringlib safestringlib_download)
 
-# Link to all libraries
+# Link to libraries
 target_link_libraries(duckydd 
 	PRIVATE
 		${UDEV_LIB}
-		${XKBCOMMON_LIB}
-		${XKBCOMMON_X11_LIB}
-		${XCB_LIB}
         ${MATH_LIB}
 		safestringlib
 )
+
+# Link to xkb specific libraries
+if(${ENABLE_XKB_EXTENSION})
+target_link_libraries(duckydd 
+	PRIVATE
+		${XKBCOMMON_LIB}
+		${XKBCOMMON_X11_LIB}
+		${XCB_LIB}
+)
+endif()
 
 # Install the release build
 install(TARGETS duckydd
