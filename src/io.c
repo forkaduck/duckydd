@@ -287,12 +287,14 @@ int handleargs(int argc, char* argv[], struct argInfo* data)
                        "\t\t-c <file>\tSpecify a config file path\n"
                        "\t\t-d\t\tDaemonize the process\n"
                        "\t\t-v\t\tIncrease verbosity of the console output (The maximum verbosity is 2)\n"
+                       "\t\t\t\tTHE -v OPTION CAN POTENTIALY EXPOSE PASSWORDS!!!\n"
                        "\t\t-h\t\tShows this help section\n\n"
-                       "THE -v OPTION CAN POTENTIALY EXPOSE PASSWORDS!!!\n\n"
-                       "For config options please have a look at the README.md\n\n"
+                       "For config options please have a look at the README.md\n"
+                       "The daemon was compiled against: udev "
 #ifdef ENABLE_XKB_EXTENSION 
-                       "xkbcommon support compiled in!\n\n"
+                       "xkbcommon xkbcommon-x11 xcb "
 #endif
+                       "\n"
                     ,GIT_VERSION);
                 help = true;
                 break;
