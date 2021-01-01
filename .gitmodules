@@ -1,3 +1,0 @@
-[submodule "safestringlib"]
-	path = lib/safestringlib
-	url = https://github.com/intel/safestringlib
