@@ -27,7 +27,7 @@ $ cd duckydd
 
 # Compile the code in the build directory
 # (You can optionaly change the -DENABLE_XKB_EXTENSION flag to OFF if you don't want to link against x server dependent libraries)
-$ cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_XKB_EXTENSION=ON && cmake --build build
+$ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_XKB_EXTENSION=ON && cmake --build build
 ```
 
 If you use Systemd then you can install the project with a service file like this:
