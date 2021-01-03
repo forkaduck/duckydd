@@ -290,7 +290,7 @@ static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* devi
         }
 
     } else {
-        LOG(1, "kstate:%s\n", device->kstate);
+        LOG(1, "kstate:%x\n", device->kstate);
     }
     return 0;
 }

@@ -231,7 +231,7 @@ int readconfig(const char path[], struct configInfo* config)
             // enables the use of x server keymaps if they are available
             if (parse_long(&current[12], NULL) == 1) {
                 config->xkeymaps = true;
-                LOG(1, "Using x server keymaps!\n");
+                LOG(1, "UseXKeymaps set to 1!\n");
             }
         }
 
@@ -274,7 +274,7 @@ int handleargs(int argc, char* argv[], struct argInfo* data)
             // increase the verbosity level
             case 'v':
                 if (g_loglevel < MAX_LOGLEVEL) {
-                    g_loglevel += 1;
+                    g_loglevel++;
                 } else {
                     LOG(0, "Can't increment loglevel any more!\n");
                 }
