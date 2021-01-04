@@ -215,7 +215,7 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
     if (m_deviceInfo(device)[fd].fd == -1) {
         size_t i;
 
-        strcpy_s(m_deviceInfo(device)[fd].openfd, MAX_SIZE_PATH, location);
+        strcpy_s(m_deviceInfo(device)[fd].openfd, PATH_MAX, location);
         m_deviceInfo(device)[fd].fd = fd;
 
 #ifdef ENABLE_XKB_EXTENSION

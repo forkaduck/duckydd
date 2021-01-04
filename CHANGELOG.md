@@ -5,6 +5,14 @@ This project adheres to [Semantic Versioning](http://semver.org/)
 and uses [Keep a Changelog](http://keepachangelog.com/) as a basis.
 
 ## [Unreleased]
+#### Changed
+- Replaced MAX_SIZE_PATH with PATH_MAX
+
+#### Fixed
+- Subtraction of timespec struct
+
+
+## [0.3.0] - 2021-01-04
 #### Added
 - New detection method which uses the average time difference between keystrokes
 - Help flag

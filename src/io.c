@@ -201,7 +201,7 @@ int readconfig(const char path[], struct configInfo* config)
 
         } else if (strncmp_ss(current, "logpath", 6) == 0) {
             // path where the logfile will be saved
-            strcpy_s(config->logpath, MAX_SIZE_PATH, &current[8]);
+            strcpy_s(config->logpath, PATH_MAX, &current[8]);
 
             struct stat st;
             if (stat(config->logpath, &st) < 0) {
@@ -262,7 +262,7 @@ int handleargs(int argc, char* argv[], struct argInfo* data)
             // path to the config to be used
             case 'c':
                 if (i + 1 < argc) {
-                    strcpy_s(data->configpath, MAX_SIZE_PATH, argv[i + 1]); // config path
+                    strcpy_s(data->configpath, PATH_MAX, argv[i + 1]); // config path
                 }
                 break;
 
@@ -291,11 +291,11 @@ int handleargs(int argc, char* argv[], struct argInfo* data)
                        "\t\t-h\t\tShows this help section\n\n"
                        "For config options please have a look at the README.md\n"
                        "The daemon was compiled against: udev "
-#ifdef ENABLE_XKB_EXTENSION 
+#ifdef ENABLE_XKB_EXTENSION
                        "xkbcommon xkbcommon-x11 xcb "
 #endif
-                       "\n"
-                    ,GIT_VERSION);
+                       "\n",
+                    GIT_VERSION);
                 help = true;
                 break;
 
@@ -359,6 +359,22 @@ void _logger(short loglevel, const char func[], const char format[], ...)
     }
 }
 
+errno_t pathcat(char path1[], const char path2[])
+{
+    if (strnlen_s(path1, PATH_MAX) + strnlen_s(path2, PATH_MAX) < PATH_MAX) {
+        return strcat_s(path1, PATH_MAX, path2);
+    }
+    return EINVAL;
+}
+
+errno_t pathcpy(char path1[], const char path2[])
+{
+    if (strnlen_s(path1, PATH_MAX) + strnlen_s(path2, PATH_MAX) < PATH_MAX) {
+        return strcpy_s(path1, PATH_MAX, path2);
+    }
+    return EINVAL;
+}
+
 // memsave strcmp functions
 int strcmp_ss(const char str1[], const char str2[])
 {
@@ -393,7 +409,7 @@ const char* find_file(const char* input)
 {
     size_t i;
 
-    for (i = strnlen_s(input, MAX_SIZE_PATH); i > 0; i--) { // returns the filename
+    for (i = strnlen_s(input, PATH_MAX); i > 0; i--) { // returns the filename
         if (input[i] == '/') {
             return &input[i + 1];
         }

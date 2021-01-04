@@ -4,7 +4,10 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <time.h>
+#include <limits.h>
+#include <errno.h>
 
+#include "safe_lib.h"
 #include "mbuffer.h"
 #include "vars.h"
 
@@ -15,7 +18,7 @@
 struct configInfo {
     long int maxcount;
 
-    char logpath[MAX_SIZE_PATH];
+    char logpath[PATH_MAX];
 
     // kbd
     bool xkeymaps;
@@ -26,7 +29,7 @@ struct configInfo {
 
 // holds data that was parsed out by handleargs
 struct argInfo {
-    char configpath[MAX_SIZE_PATH];
+    char configpath[PATH_MAX];
 };
 
 int readconfig(const char path[], struct configInfo* data);
@@ -35,6 +38,9 @@ int handleargs(int argc, char* argv[], struct argInfo* data);
 // internal logger function
 char* binexpand(uint8_t bin, size_t size);
 void _logger(short loglevel, const char func[], const char format[], ...);
+
+errno_t pathcat(char path1[], const char path2[]);
+errno_t pathcpy(char path1[], const char path2[]);
 
 // better strcmp implementations
 int strcmp_ss(const char str1[], const char str2[]);

@@ -7,9 +7,6 @@
 #define MAX_SIZE_EVENTS 40
 #define MAX_LOGLEVEL 2
 
-// external buffers
-#define MAX_SIZE_PATH 200
-
 // internal buffers
 #define MAX_SIZE_FUNCTION_NAME 50
 #define MAX_SIZE_FORMAT_STRING 100

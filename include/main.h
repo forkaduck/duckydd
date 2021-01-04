@@ -20,7 +20,7 @@ struct udevInfo {
 };
 
 struct deviceInfo {
-    char openfd[MAX_SIZE_PATH];
+    char openfd[PATH_MAX];
     int fd;
 
     struct managedBuffer devlog; // holds keystrokes pressed
