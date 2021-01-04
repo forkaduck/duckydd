@@ -203,9 +203,8 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
             m_deviceInfo(device)[i].xstate = NULL;
             m_init(&m_deviceInfo(device)[i].devlog, sizeof(char));
 
-
             m_init(&m_deviceInfo(device)[i].strokesdiff, sizeof(struct timespec));
-            
+
             m_deviceInfo(device)[i].lasttime.tv_sec = 0;
             m_deviceInfo(device)[i].lasttime.tv_nsec = 0;
             m_deviceInfo(device)[i].currdiff = 0;
@@ -467,20 +466,24 @@ int main(int argc, char* argv[])
                         if (event.type == EV_KEY) {
                             LOG(2, "fd=%d event.type=%d event.code=%d event.value=%d\n", fd, event.type, event.code, event.value);
 
-                            if (m_deviceInfo(&device)[fd].score >= config.maxcount) {
-                                if (event.value == 0) {
-                                    int ioctlarg = 1;
-                                    if (ioctl(fd, EVIOCGRAB, &ioctlarg)) {
-                                        ERR("ioctl");
+                            if (event.value != 2) {
+                                if (m_deviceInfo(&device)[fd].score >= config.maxcount) {
+                                    if (event.value == 0) {
+                                        int ioctlarg = 1;
+
+                                        if (ioctl(fd, EVIOCGRAB, &ioctlarg)) {
+                                            ERR("ioctl");
+                                        }
+                                        m_deviceInfo(&device)[fd].score = -1;
+                                        LOG(0, "Locked fd %d\n", fd);
                                     }
-                                    m_deviceInfo(&device)[fd].score = -1;
-                                    LOG(0, "Locked fd %d\n", fd);
+                                }
+
+                                if (logkey(&kbd, &m_deviceInfo(&device)[fd], event, &config)) {
+                                    LOG(0, "logkey failed!\n");
                                 }
                             }
 
-                            if (logkey(&kbd, &m_deviceInfo(&device)[fd], event, &config)) {
-                                LOG(0, "logkey failed!\n");
-                            }
                         } else if (event.type == SYN_DROPPED) {
                             LOG(-1, "Sync dropped! Eventhandler not fast enough!\n");
                         }

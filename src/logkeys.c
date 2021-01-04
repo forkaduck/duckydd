@@ -370,6 +370,17 @@ int deinit_keylogging(struct keyboardInfo* kbd, struct configInfo* config)
     return 0;
 }
 
+static inline void timespec_diff(struct timespec* result, struct timespec* a, struct timespec* b)
+{
+    result->tv_sec = a->tv_sec - b->tv_sec;
+    result->tv_nsec = a->tv_nsec - b->tv_nsec;
+
+    if (result->tv_nsec < 0) {
+        result->tv_sec--;
+        result->tv_nsec += 1000000000L;
+    }
+}
+
 static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
 {
     // increment currdiff until wraparound
@@ -383,15 +394,16 @@ static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
         }
 
         // caluclate time difference
-        m_struct_timespec(&device->strokesdiff)[device->currdiff].tv_sec = temp.tv_sec - device->lasttime.tv_sec;
-        m_struct_timespec(&device->strokesdiff)[device->currdiff].tv_nsec = temp.tv_nsec - device->lasttime.tv_nsec;
+        timespec_diff(&m_struct_timespec(&device->strokesdiff)[device->currdiff], &temp, &device->lasttime);
 
         // save last value
         device->lasttime.tv_sec = temp.tv_sec;
         device->lasttime.tv_nsec = temp.tv_nsec;
 
+        LOG(2, "lasttime: %ds %dns currdiff: %d\n", temp.tv_sec, temp.tv_nsec, device->currdiff);
+
         // if the queue is filled then use it to calculate the average difference
-        if (m_struct_timespec(&device->strokesdiff)[device->strokesdiff.size - 1].tv_sec != 0 || m_struct_timespec(&device->strokesdiff)[device->strokesdiff.size - 1].tv_nsec != 0) {
+        if (device->currdiff == device->strokesdiff.size - 1) {
             size_t i;
             struct timespec sum;
 
@@ -411,13 +423,14 @@ static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
             sum.tv_sec /= device->strokesdiff.size;
             sum.tv_nsec /= device->strokesdiff.size;
 
-            LOG(2, "Average time: %ds %dns\n", sum.tv_sec, sum.tv_nsec);
+            LOG(2, "avgtime: %ds %dns\n", sum.tv_sec, sum.tv_nsec);
 
             if (sum.tv_sec < config->minavrg.tv_sec || (sum.tv_sec == config->minavrg.tv_sec && sum.tv_nsec < config->minavrg.tv_nsec)) {
                 device->score++;
             }
         }
         device->currdiff++;
+
     } else {
         device->currdiff = 0;
     }
