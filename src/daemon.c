@@ -46,7 +46,7 @@ int become_daemon(struct configInfo config)
     fclose(stderr);
 
     {
-        char path[PATH_MAX];
+        char path[PATH_MAX] = {'\0'};
 
         pathcpy(path, config.logpath);
         pathcat(path, "/out.log");

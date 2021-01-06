@@ -26,6 +26,10 @@
 #define T size_t
 #include "mbuffertemplate.h"
 
+#define PREFIX char
+#define T char
+#include "mbuffertemplate.h"
+
 // config interpretation functions
 static void cleaninput(char* input, const size_t size)
 {
@@ -69,39 +73,36 @@ static long int parse_long(const char input[], char** end)
     return num;
 }
 
-static size_t readfile(int fd, char** output)
+static int readfile(int fd, struct managedBuffer *output)
 {
-    char buffer[10];
-    size_t readsize = -1;
-    size_t size = 0;
+    int rv = 1;
+    size_t readoffset = 0;
 
-    // read 10 bytes, reallocate the array and then copy them into the array
-    while (readsize != 0) {
-        char* temp;
-        readsize = read(fd, buffer, sizeof(buffer));
-        size += readsize;
-
-        temp = realloc(*output, sizeof(char) * size);
-        if (!temp) {
-            free(*output);
-            *output = NULL;
-            return 0;
+    // reallocate the array, read 10 bytes and then copy them into the array
+    while (rv != 0) {
+        if(m_realloc(output, output->size + 10)) {
+            return -1;
         }
-        *output = temp;
 
-        memcpy_s(&(*output)[size - readsize], readsize, buffer, readsize);
+        rv = read(fd, &m_char(output)[readoffset], 10);
+        if(rv < 0) {
+            return -2;
+        }
+        readoffset += rv;
     }
-    return size;
+    m_realloc(output, readoffset + 1);
+    m_char(output)[readoffset] = '\0';
+    return 0;
 }
 
 int readconfig(const char path[], struct configInfo* config)
 {
     int err = 0;
-    size_t size;
     size_t usedsize;
     size_t i;
 
-    char* buffer = NULL;
+    struct managedBuffer buffer;
+
     char* current = NULL;
 
     config->maxcount = -1;
@@ -112,6 +113,8 @@ int readconfig(const char path[], struct configInfo* config)
 
     config->minavrg.tv_sec = 0;
     config->minavrg.tv_nsec = 0;
+
+    m_init(&buffer, sizeof(char));
 
     // open the config file if it has no lock on it
     if (config->configfd == -1) {
@@ -145,32 +148,32 @@ int readconfig(const char path[], struct configInfo* config)
     }
 
     // read the file into a dynamic buffer
-    size = readfile(config->configfd, &buffer);
-    if (buffer == NULL) {
+    if(readfile(config->configfd, &buffer)){
         LOG(-1, "readfile failed\n");
         err = -3;
         goto error_exit;
     }
 
-    for (i = 0; i < size; i++) {
-        if (buffer[i] == '\n') {
-            buffer[i] = '\0';
+    for (i = 0; i < buffer.size; i++) {
+        if (m_char(&buffer)[i] == '\n') {
+            m_char(&buffer)[i] = '\0';
         }
     }
 
-    current = buffer;
+    current = m_char(&buffer);
     usedsize = 0;
-    while (size > usedsize) {
+    while (buffer.size > usedsize) {
         size_t next;
 
         // loop over the string and pick out every line
-        for (next = 0; next < (size - usedsize); next++) {
+        for (next = 0; next < (buffer.size - usedsize); next++) {
             if (current[next] == '\0') {
                 usedsize += next + 1;
                 break;
             }
         }
         cleaninput(current, next);
+        LOG(2, "-> %s\n", current);
 
         // gets the minimal average time difference between keystrokes
         if (strncmp_ss(current, "minavrg", 6) == 0) {
@@ -200,30 +203,33 @@ int readconfig(const char path[], struct configInfo* config)
             LOG(1, "Maxscore set to %ld\n", config->maxcount);
 
         } else if (strncmp_ss(current, "logpath", 6) == 0) {
-            // path where the logfile will be saved
-            strcpy_s(config->logpath, PATH_MAX, &current[8]);
-
             struct stat st;
+
+            // path where the logfile will be saved
+            pathcpy(config->logpath, &current[8]);
+
             if (stat(config->logpath, &st) < 0) {
-                if (ENOENT == errno) {
+                if (errno == ENOENT) {
                     if (mkdir(config->logpath, 731)) {
                         ERR("mkdir");
                         err = -7;
                         goto error_exit;
                     }
                     LOG(0, "Created logging directory!\n");
+
                 } else {
                     ERR("stat");
-                    err = -8;
+                    err = -6;
                     goto error_exit;
                 }
 
             } else {
                 if (S_ISDIR(st.st_mode)) {
                     LOG(1, "Set %s as the path for logging!\n", config->logpath);
+
                 } else {
                     LOG(-1, "Logpath does not point to a directory!\n");
-                    err = -9;
+                    err = -7;
                     goto error_exit;
                 }
             }
@@ -235,17 +241,17 @@ int readconfig(const char path[], struct configInfo* config)
             }
         }
 
-        current = &buffer[usedsize];
+        current = &m_char(&buffer)[usedsize];
     }
 
-    free(buffer);
+    m_free(&buffer);
     return err;
 
 error_exit:
     if (close(config->configfd)) {
         ERR("close");
     }
-    free(buffer);
+    m_free(&buffer);
     return err;
 }
 
