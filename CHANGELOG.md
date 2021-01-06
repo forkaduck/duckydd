@@ -4,9 +4,10 @@ Here all of the major changes are documented.
 This project adheres to [Semantic Versioning](http://semver.org/)
 and uses [Keep a Changelog](http://keepachangelog.com/) as a basis.
 
-## [Unreleased]
+## [0.3.1] - 2021-01-06
 #### Changed
 - Replaced MAX_SIZE_PATH with PATH_MAX
+- Changed readline to use a managedBuffer
 
 #### Fixed
 - Subtraction of timespec struct
