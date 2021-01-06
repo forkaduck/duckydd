@@ -109,7 +109,7 @@ $ sudo rm -rf /etc/duckydd
 ```
 
 ## Known issues:
-* No protocol specified
+###### No protocol specified
 If you get the message "No protocol specified" when starting the daemon as a service
 then you need to add the user root to the list of trusted users of the x server.
 This needs to be done so that the daemon can access the master keyboard.
