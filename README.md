@@ -101,18 +101,31 @@ At the moment the use of the kernel keymaps is **experimental** although alphanu
 of the english language work.
 
 ## Uninstall:
+Run the following commands from the project root to get rid of duckydd
 ```
-cd bin
-sudo xargs rm < install_manifest.txt
-sudo rm -rf /etc/duckydd
+$ cd build
+$ sudo xargs rm < install_manifest.txt
+$ sudo rm -rf /etc/duckydd
 ```
 
 ## Known issues:
+* No protocol specified
 If you get the message "No protocol specified" when starting the daemon as a service
-then you need to add the user root to the list of trusted users of the x server. This
-needs to be done on boot but after the x server has started.
-To do this issue the following command as the local user:
+then you need to add the user root to the list of trusted users of the x server.
+This needs to be done so that the daemon can access the master keyboard.
 
+You can test if this is the case by issuing the following command and then restarting the daemon.
 `xhost local:root`
 
-You will have to restart the daemon after doing this.
+If the error disappears then you need to make the .AUTHORITY (which is usually in your home directory)
+file containing the MIT-MAGIC-COOKIE readable to the root user.
+
+You then need to export the XAUTHORITY environment variable like this before the daemon starts.
+`export XAUTHORITY=/home/<username>/.Xauthority`
+
+If you use systemd you can add the following line to the duckydd service file in the "[Service]" section.
+```
+[Service]
+Environment="XAUTHORITY=/home/<username>/.Xauthority"
+```
+
