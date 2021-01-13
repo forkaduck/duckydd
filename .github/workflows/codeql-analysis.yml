@@ -41,7 +41,7 @@ jobs:
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
 
     - name: Build
-      uses: duckydd/cmake
+      uses: ./.github/workflows/cmake
 
 
     - name: Perform CodeQL Analysis
