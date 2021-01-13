@@ -4,6 +4,14 @@ Here all of the major changes are documented.
 This project adheres to [Semantic Versioning](http://semver.org/)
 and uses [Keep a Changelog](http://keepachangelog.com/) as a basis.
 
+## [0.3.2] - 2021-01-13
+#### Added
+- Issue template for bug reports
+- Fix for "No protocol specified"
+
+#### Changed
+- File permissions of installed files
+
 ## [0.3.1] - 2021-01-06
 #### Changed
 - Replaced MAX_SIZE_PATH with PATH_MAX
