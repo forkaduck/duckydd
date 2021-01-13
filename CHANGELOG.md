@@ -15,7 +15,7 @@ and uses [Keep a Changelog](http://keepachangelog.com/) as a basis.
 ## [0.3.1] - 2021-01-06
 #### Changed
 - Replaced MAX_SIZE_PATH with PATH_MAX
-- Changed readline to use a managedBuffer
+- Changed readfile to use a managedBuffer
 
 #### Fixed
 - Subtraction of timespec struct
