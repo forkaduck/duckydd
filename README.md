@@ -1,6 +1,9 @@
 # Ducky Detector Daemon
 This daemon protects from pretty much every HID injection attack.
 
+![CMake](https://github.com/0xDEADC0DEx/duckydd/workflows/CMake/badge.svg?branch=master)
+![CodeQL](https://github.com/0xDEADC0DEx/duckydd/workflows/CodeQL/badge.svg?branch=master)
+
 ## Compatibility Note:
 This daemon depends on the following libraries:
 ```
