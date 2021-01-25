@@ -33,24 +33,22 @@
 // config interpretation functions
 static void cleaninput(char* input, const size_t size)
 {
-    size_t i;
+    size_t i, offset = 0;
 
     for (i = 0; i < size; i++) {
-        char curr;
+        const char curr = input[i - offset];
 
-        curr = input[i];
         // check for invalid characters
-        if ((curr <= '9' && curr >= '0') || (curr <= 'Z' && curr >= 'A') || (curr <= 'z' && curr >= 'a') || curr == '/') {
-            input[i] = curr;
+        if ((curr <= '9' && curr >= '0') || (curr <= 'Z' && curr >= 'A') || (curr <= 'z' && curr >= 'a') || curr == '/' || curr == ' ') {
+            input[i - offset] = curr;
 
-        } else if (curr == '\0') {
-            break;
+        } else if (curr == '\0' || curr == '\n') {
+            input[i - offset] = '\0';
 
         } else {
-            input[i] = ' ';
+            offset++;
         }
     }
-    input[i] = '\0';
 }
 
 static long int parse_long(const char input[], char** end)
@@ -99,7 +97,6 @@ int readconfig(const char path[], struct configInfo* config)
 {
     int err = 0;
     size_t usedsize;
-    size_t i;
 
     struct managedBuffer buffer;
 
@@ -152,12 +149,6 @@ int readconfig(const char path[], struct configInfo* config)
         LOG(-1, "readfile failed\n");
         err = -3;
         goto error_exit;
-    }
-
-    for (i = 0; i < buffer.size; i++) {
-        if (m_char(&buffer)[i] == '\n') {
-            m_char(&buffer)[i] = '\0';
-        }
     }
 
     current = m_char(&buffer);
@@ -296,7 +287,7 @@ int handleargs(int argc, char* argv[], struct argInfo* data)
                        "\t\t\t\tTHE -v OPTION CAN POTENTIALY EXPOSE PASSWORDS!!!\n"
                        "\t\t-h\t\tShows this help section\n\n"
                        "For config options please have a look at the README.md\n"
-                       "The daemon was compiled against: udev "
+                       "The daemon was linked against: udev "
 #ifdef ENABLE_XKB_EXTENSION
                        "xkbcommon xkbcommon-x11 xcb "
 #endif

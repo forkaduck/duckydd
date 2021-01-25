@@ -494,7 +494,7 @@ int logkey(struct keyboardInfo* kbd, struct deviceInfo* device, struct input_eve
             LOG(-1, "codetoksym failed!\n");
             return -3;
         }
-        printf("\n");
+        LOG(0, "\n");
     }
 
     // check if the keystrokes are typed in a manner not typical to human typing
