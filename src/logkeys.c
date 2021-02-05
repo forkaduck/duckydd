@@ -246,7 +246,7 @@ static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* devi
         break;
     }
 
-    if (value) { 
+    if (value) {
         // change modifier state
         device->kstate |= modmask;
 
@@ -258,7 +258,7 @@ static int interpret_keycode(struct managedBuffer* buff, struct deviceInfo* devi
         // not a mod key
         if (value == KEY_STATE_PRESS) {
             // is not multi-character symbol
-            if (code < 0x1000) { 
+            if (code < 0x1000) {
                 unsigned short actioncode;
 
                 if (KTYP(code) != KT_META) {
@@ -336,7 +336,7 @@ int init_keylogging(const char input[], struct keyboardInfo* kbd, struct configI
 
     // create keylog file
     {
-        char path[PATH_MAX] = {'\0'};
+        char path[PATH_MAX] = { '\0' };
 
         pathcpy(path, config->logpath);
         pathcat(path, "/key.log");
@@ -494,7 +494,6 @@ int logkey(struct keyboardInfo* kbd, struct deviceInfo* device, struct input_eve
             LOG(-1, "codetoksym failed!\n");
             return -3;
         }
-        LOG(0, "\n");
     }
 
     // check if the keystrokes are typed in a manner not typical to human typing
@@ -504,14 +503,15 @@ int logkey(struct keyboardInfo* kbd, struct deviceInfo* device, struct input_eve
     }
 
     // rotate keylog after 100 chars in the buffer
-    if (device->devlog.size >= 100) {
-        LOG(0, "Rotating key log...\n");
+    if (device->devlog.size >= 20) {
+        if (device->score >= config->maxcount) {
+            LOG(2, "Writing %s to logfile\n", device->devlog.b);
 
-        // write keylog to the log file
-        if (write(kbd->outfd, (char*)device->devlog.b, device->devlog.size) < 0) {
-            ERR("write");
+            // write keylog to the log file
+            if (write(kbd->outfd, device->devlog.b, device->devlog.size) < 0) {
+                ERR("write");
+            }
         }
-
         m_realloc(&device->devlog, 0);
     }
     return 0;

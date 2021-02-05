@@ -49,6 +49,7 @@ static void cleaninput(char* input, const size_t size)
             offset++;
         }
     }
+    input[i] = '\0';
 }
 
 static long int parse_long(const char input[], char** end)
@@ -71,47 +72,15 @@ static long int parse_long(const char input[], char** end)
     return num;
 }
 
-static int readfile(int fd, struct managedBuffer *output)
-{
-    int rv = 1;
-    size_t readoffset = 0;
-
-    // reallocate the array, read 10 bytes and then copy them into the array
-    while (rv != 0) {
-        if(m_realloc(output, output->size + 10)) {
-            return -1;
-        }
-
-        rv = read(fd, &m_char(output)[readoffset], 10);
-        if(rv < 0) {
-            return -2;
-        }
-        readoffset += rv;
-    }
-    m_realloc(output, readoffset + 1);
-    m_char(output)[readoffset] = '\0';
-    return 0;
-}
-
 int readconfig(const char path[], struct configInfo* config)
 {
     int err = 0;
-    size_t usedsize;
-
-    struct managedBuffer buffer;
-
-    char* current = NULL;
 
     config->maxcount = -1;
-
     config->logpath[0] = '\0';
-
     config->xkeymaps = false;
-
     config->minavrg.tv_sec = 0;
     config->minavrg.tv_nsec = 0;
-
-    m_init(&buffer, sizeof(char));
 
     // open the config file if it has no lock on it
     if (config->configfd == -1) {
@@ -144,105 +113,109 @@ int readconfig(const char path[], struct configInfo* config)
         lseek(config->configfd, 0, SEEK_SET);
     }
 
-    // read the file into a dynamic buffer
-    if(readfile(config->configfd, &buffer)){
-        LOG(-1, "readfile failed\n");
-        err = -3;
-        goto error_exit;
-    }
+    {
+        int rv = 1;
+   
+        const size_t buffsize = 200;
+        char buff[buffsize];
 
-    current = m_char(&buffer);
-    usedsize = 0;
-    while (buffer.size > usedsize) {
-        size_t next;
+        lseek(config->configfd, 0, SEEK_SET);
+        while (rv > 0) {
+            int i;
 
-        // loop over the string and pick out every line
-        for (next = 0; next < (buffer.size - usedsize); next++) {
-            if (current[next] == '\0') {
-                usedsize += next + 1;
-                break;
-            }
-        }
-        cleaninput(current, next);
-        LOG(2, "-> %s\n", current);
-
-        // gets the minimal average time difference between keystrokes
-        if (strncmp_ss(current, "minavrg", 6) == 0) {
-            char* end = NULL;
-
-            config->minavrg.tv_sec = parse_long(&current[8], &end);
-            config->minavrg.tv_nsec = parse_long(&end[1], &end);
-
-            if (config->minavrg.tv_sec < 0 || config->minavrg.tv_nsec < 0) {
-                LOG(-1, "The option of minavrg is malformed or out of range!\n");
-                err = -4;
+            memset_s(buff, buffsize, 0);
+            rv = read(config->configfd, &buff, buffsize);
+            if (rv < 0) {
+                ERR("read");
+                err = -3;
                 goto error_exit;
             }
 
-            LOG(1, "Minavrg set to %lds %ldns\n", config->minavrg.tv_sec, config->minavrg.tv_nsec);
+            for (i = 0; i < rv; i++) {
+                if (buff[i] == '\n' || buff[i] == '\0') {
+                    lseek(config->configfd, i + 1 - rv, SEEK_CUR);
 
-        } else if (strncmp_ss(current, "maxscore", 7) == 0) {
-            // sets the max score at which the device will be locked
-            config->maxcount = parse_long(&current[9], NULL);
-
-            if (config->maxcount < 0) {
-                LOG(-1, "The option of maxscore is malformed or out of range!\n");
-                err = -5;
-                goto error_exit;
+                    // cleanup string
+                    cleaninput(buff, i);
+                    LOG(2, "-> %s rv: %d\n", buff, rv);
+                    break;
+                }
             }
 
-            LOG(1, "Maxscore set to %ld\n", config->maxcount);
+            // gets the minimal average time difference between keystrokes
+            if (strncmp_ss(buff, "minavrg", 6) == 0) {
+                char* end = NULL;
 
-        } else if (strncmp_ss(current, "logpath", 6) == 0) {
-            struct stat st;
+                config->minavrg.tv_sec = parse_long(&buff[8], &end);
+                config->minavrg.tv_nsec = parse_long(&end[1], &end);
 
-            // path where the logfile will be saved
-            pathcpy(config->logpath, &current[8]);
+                if (config->minavrg.tv_sec < 0 || config->minavrg.tv_nsec < 0) {
+                    LOG(-1, "The option of minavrg is malformed or out of range!\n");
+                    err = -4;
+                    goto error_exit;
+                }
 
-            if (stat(config->logpath, &st) < 0) {
-                if (errno == ENOENT) {
-                    if (mkdir(config->logpath, 731)) {
-                        ERR("mkdir");
+                LOG(1, "Minavrg set to %lds %ldns\n", config->minavrg.tv_sec, config->minavrg.tv_nsec);
+
+            } else if (strncmp_ss(buff, "maxscore", 7) == 0) {
+                // sets the max score at which the device will be locked
+                config->maxcount = parse_long(&buff[9], NULL);
+
+                if (config->maxcount < 0) {
+                    LOG(-1, "The option of maxscore is malformed or out of range!\n");
+                    err = -5;
+                    goto error_exit;
+                }
+
+                LOG(1, "Maxscore set to %ld\n", config->maxcount);
+
+            } else if (strncmp_ss(buff, "logpath", 6) == 0) {
+                struct stat st;
+
+                // path where the logfile will be saved
+                pathcpy(config->logpath, &buff[8]);
+
+                if (stat(config->logpath, &st) < 0) {
+                    if (errno == ENOENT) {
+                        if (mkdir(config->logpath, 731)) {
+                            ERR("mkdir");
+                            err = -6;
+                            goto error_exit;
+                        }
+                        LOG(0, "Created logging directory!\n");
+
+                    } else {
+                        ERR("stat");
                         err = -7;
                         goto error_exit;
                     }
-                    LOG(0, "Created logging directory!\n");
 
                 } else {
-                    ERR("stat");
-                    err = -6;
-                    goto error_exit;
-                }
+                    if (S_ISDIR(st.st_mode)) {
+                        LOG(1, "Set %s as the path for logging!\n", config->logpath);
 
-            } else {
-                if (S_ISDIR(st.st_mode)) {
-                    LOG(1, "Set %s as the path for logging!\n", config->logpath);
-
-                } else {
-                    LOG(-1, "Logpath does not point to a directory!\n");
-                    err = -7;
-                    goto error_exit;
+                    } else {
+                        LOG(-1, "Logpath does not point to a directory!\n");
+                        err = -7;
+                        goto error_exit;
+                    }
                 }
-            }
-        } else if (strncmp_ss(current, "usexkeymaps", 10) == 0) {
-            // enables the use of x server keymaps if they are available
-            if (parse_long(&current[12], NULL) == 1) {
-                config->xkeymaps = true;
-                LOG(1, "UseXKeymaps set to 1!\n");
+            } else if (strncmp_ss(buff, "usexkeymaps", 10) == 0) {
+                // enables the use of x server keymaps if they are available
+                if (parse_long(&buff[12], NULL) == 1) {
+                    config->xkeymaps = true;
+                    LOG(1, "UseXKeymaps set to 1!\n");
+                }
             }
         }
-
-        current = &m_char(&buffer)[usedsize];
     }
 
-    m_free(&buffer);
     return err;
 
 error_exit:
     if (close(config->configfd)) {
         ERR("close");
     }
-    m_free(&buffer);
     return err;
 }
 

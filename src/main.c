@@ -70,21 +70,21 @@ static int deinit_device(struct deviceInfo* device, struct configInfo* config, s
 
         device->openfd[0] = '\0';
         device->fd = -1;
-    }
 
-    if (device->devlog.b != NULL) {
-        if (device->score < 0) {
+        if (device->devlog.size != 0 && device->score >= config->maxcount) {
+            LOG(0, "Writing devlog to logfile\n");
             if (m_append_array_char(&device->devlog, "\n\0", 2)) {
                 LOG(-1, "append_mbuffer_array_char failed!\n");
             }
 
             // write keylog to the log file
-            if (write(kbd->outfd, (char*)device->devlog.b, device->devlog.size) < 0) {
+            if (write(kbd->outfd, device->devlog.b, device->devlog.size) < 0) {
                 ERR("write");
             }
         }
-        m_free(&device->devlog);
     }
+
+    m_free(&device->devlog);
 
 #ifdef ENABLE_XKB_EXTENSION
     if (config->xkeymaps && device->xstate != NULL) {
@@ -200,6 +200,7 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
             m_deviceInfo(device)[i].fd = -1;
 
             m_deviceInfo(device)[i].score = 0;
+            m_deviceInfo(device)[i].locked = false;
             m_deviceInfo(device)[i].xstate = NULL;
             m_init(&m_deviceInfo(device)[i].devlog, sizeof(char));
 
@@ -467,16 +468,14 @@ int main(int argc, char* argv[])
                             LOG(2, "fd=%d event.type=%d event.code=%d event.value=%d\n", fd, event.type, event.code, event.value);
 
                             if (event.value != 2) {
-                                if (m_deviceInfo(&device)[fd].score >= config.maxcount) {
-                                    if (event.value == 0) {
-                                        int ioctlarg = 1;
+                                if (m_deviceInfo(&device)[fd].score >= config.maxcount && event.value == 0 && !m_deviceInfo(&device)[fd].locked) {
+                                    int ioctlarg = 1;
 
-                                        if (ioctl(fd, EVIOCGRAB, &ioctlarg)) {
-                                            ERR("ioctl");
-                                        }
-                                        m_deviceInfo(&device)[fd].score = -1;
-                                        LOG(0, "Locked fd %d\n", fd);
+                                    if (ioctl(fd, EVIOCGRAB, &ioctlarg)) {
+                                        ERR("ioctl");
                                     }
+                                    LOG(0, "Locked fd %d\n", fd);
+                                    m_deviceInfo(&device)[fd].locked = true;
                                 }
 
                                 if (logkey(&kbd, &m_deviceInfo(&device)[fd], event, &config)) {
