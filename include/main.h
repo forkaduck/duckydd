@@ -19,6 +19,12 @@ struct udevInfo {
     struct udev_monitor* mon;
 };
 
+struct keystrokeDiff {
+    struct timespec lasttime;
+    struct managedBuffer strokesdiff; // holds time differences between keystrokes in queue
+    size_t currdiff;
+};
+
 struct deviceInfo {
     char openfd[PATH_MAX];
     int fd;
@@ -36,8 +42,6 @@ struct deviceInfo {
     int score;
     bool locked;
 
-    struct timespec lasttime;
-    struct managedBuffer strokesdiff; // holds time differences between keystrokes in queue
-    size_t currdiff;
+    struct keystrokeDiff timediff;
 };
 #endif

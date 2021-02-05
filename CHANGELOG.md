@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/)
 and uses [Keep a Changelog](http://keepachangelog.com/) as a basis.
 
 ## [Unreleased]
+#### Fixed
+- Logging keystrokes to a file
+- Config parser which only read the first line
+
 
 ## [0.3.2] - 2021-01-13
 #### Added

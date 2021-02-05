@@ -387,7 +387,7 @@ static inline void timespec_diff(struct timespec* result, struct timespec* a, st
 static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
 {
     // increment currdiff until wraparound
-    if (device->currdiff < device->strokesdiff.size) {
+    if (device->timediff.currdiff < device->timediff.strokesdiff.size) {
         struct timespec temp;
 
         // get current time
@@ -397,16 +397,16 @@ static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
         }
 
         // caluclate time difference
-        timespec_diff(&m_struct_timespec(&device->strokesdiff)[device->currdiff], &temp, &device->lasttime);
+        timespec_diff(&m_struct_timespec(&device->timediff.strokesdiff)[device->timediff.currdiff], &temp, &device->timediff.lasttime);
 
         // save last value
-        device->lasttime.tv_sec = temp.tv_sec;
-        device->lasttime.tv_nsec = temp.tv_nsec;
+        device->timediff.lasttime.tv_sec = temp.tv_sec;
+        device->timediff.lasttime.tv_nsec = temp.tv_nsec;
 
-        LOG(2, "lasttime: %ds %dns currdiff: %d\n", temp.tv_sec, temp.tv_nsec, device->currdiff);
+        LOG(2, "lasttime: %ds %dns currdiff: %d\n", temp.tv_sec, temp.tv_nsec, device->timediff.currdiff);
 
         // if the queue is filled then use it to calculate the average difference
-        if (device->currdiff == device->strokesdiff.size - 1) {
+        if (device->timediff.currdiff == device->timediff.strokesdiff.size - 1) {
             size_t i;
             struct timespec sum;
 
@@ -414,17 +414,17 @@ static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
             sum.tv_nsec = 0;
 
             // calculate average of the array
-            for (i = 0; i < device->strokesdiff.size; i++) {
+            for (i = 0; i < device->timediff.strokesdiff.size; i++) {
                 struct timespec curr;
 
-                curr = m_struct_timespec(&device->strokesdiff)[i];
+                curr = m_struct_timespec(&device->timediff.strokesdiff)[i];
 
                 sum.tv_sec += curr.tv_sec;
                 sum.tv_nsec += curr.tv_nsec;
             }
 
-            sum.tv_sec /= device->strokesdiff.size;
-            sum.tv_nsec /= device->strokesdiff.size;
+            sum.tv_sec /= device->timediff.strokesdiff.size;
+            sum.tv_nsec /= device->timediff.strokesdiff.size;
 
             LOG(2, "avgtime: %ds %dns\n", sum.tv_sec, sum.tv_nsec);
 
@@ -432,10 +432,10 @@ static int check_if_evil(struct deviceInfo* device, struct configInfo* config)
                 device->score++;
             }
         }
-        device->currdiff++;
+        device->timediff.currdiff++;
 
     } else {
-        device->currdiff = 0;
+        device->timediff.currdiff = 0;
     }
 
     return 0;

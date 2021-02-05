@@ -93,7 +93,7 @@ static int deinit_device(struct deviceInfo* device, struct configInfo* config, s
     }
 #endif
 
-    m_free(&device->strokesdiff);
+    m_free(&device->timediff.strokesdiff);
     return err;
 
 error_exit:
@@ -196,26 +196,16 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
 
         // initialize all members of the device array which haven't been used
         for (i = prevsize; i < device->size; i++) {
-            m_deviceInfo(device)[i].openfd[0] = '\0';
+            memset_s(&m_deviceInfo(device)[i], sizeof(struct deviceInfo), 0);
             m_deviceInfo(device)[i].fd = -1;
 
-            m_deviceInfo(device)[i].score = 0;
-            m_deviceInfo(device)[i].locked = false;
-            m_deviceInfo(device)[i].xstate = NULL;
             m_init(&m_deviceInfo(device)[i].devlog, sizeof(char));
-
-            m_init(&m_deviceInfo(device)[i].strokesdiff, sizeof(struct timespec));
-
-            m_deviceInfo(device)[i].lasttime.tv_sec = 0;
-            m_deviceInfo(device)[i].lasttime.tv_nsec = 0;
-            m_deviceInfo(device)[i].currdiff = 0;
+            m_init(&m_deviceInfo(device)[i].timediff.strokesdiff, sizeof(struct timespec));
         }
     }
 
     // allocate and set the openfd
     if (m_deviceInfo(device)[fd].fd == -1) {
-        size_t i;
-
         strcpy_s(m_deviceInfo(device)[fd].openfd, PATH_MAX, location);
         m_deviceInfo(device)[fd].fd = fd;
 
@@ -232,17 +222,14 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
 #endif
 
         // allocate the array
-        if (m_realloc(&m_deviceInfo(device)[fd].strokesdiff, 6)) {
+        if (m_realloc(&m_deviceInfo(device)[fd].timediff.strokesdiff, 6)) {
             LOG(-1, "m_realloc failed!\n");
             err = -4;
             goto error_exit;
         }
 
-        // set every member of the strokediff array to 0
-        for (i = 0; i < m_deviceInfo(device)[fd].strokesdiff.size; i++) {
-            m_struct_timespec(&m_deviceInfo(device)[fd].strokesdiff)[i].tv_sec = 0;
-            m_struct_timespec(&m_deviceInfo(device)[fd].strokesdiff)[i].tv_nsec = 0;
-        }
+        // reset strokesdiff array
+        memset_s(&m_deviceInfo(device)[fd].timediff.strokesdiff, sizeof(struct timespec) * m_deviceInfo(device)[fd].timediff.strokesdiff.size, 0);
 
         // add a new fd which should be polled
         {
