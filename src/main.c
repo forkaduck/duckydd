@@ -72,7 +72,7 @@ static int deinit_device(struct deviceInfo* device, struct configInfo* config, s
         device->fd = -1;
 
         if (device->devlog.size != 0 && device->score >= config->maxcount) {
-            LOG(0, "Writing devlog to logfile\n");
+            LOG(2, "Writing devlog to logfile\n");
             if (m_append_array_char(&device->devlog, "\n\0", 2)) {
                 LOG(-1, "append_mbuffer_array_char failed!\n");
             }
