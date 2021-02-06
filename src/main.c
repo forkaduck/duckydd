@@ -376,7 +376,6 @@ int main(int argc, char* argv[])
     }
 
     // read config
-    config.configfd = -1;
     if (readconfig(arg.configpath, &config)) {
         LOG(-1, "readconfig failed\n");
         return -1;
@@ -517,11 +516,6 @@ int main(int argc, char* argv[])
             }
         }
         m_free(&device);
-    }
-
-    if (close(config.configfd)) {
-        ERR("close");
-        return -1;
     }
 
     if (close(epollfd)) {

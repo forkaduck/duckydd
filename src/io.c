@@ -74,7 +74,7 @@ static long int parse_long(const char input[], char** end)
 
 int readconfig(const char path[], struct configInfo* config)
 {
-    int err = 0;
+    int fd;
 
     config->maxcount = -1;
     config->logpath[0] = '\0';
@@ -83,34 +83,28 @@ int readconfig(const char path[], struct configInfo* config)
     config->minavrg.tv_nsec = 0;
 
     // open the config file if it has no lock on it
-    if (config->configfd == -1) {
-        config->configfd = open(path, O_RDWR); // open the config
-        if (config->configfd < 0) {
-            ERR("open");
-            err = -1;
-            goto error_exit;
-        }
+    fd = open(path, O_RDWR); // open the config
+    if (fd < 0) {
+        ERR("open");
+        return -1;
+    }
 
-        // try to lock the file if possible
-        {
-            struct flock lock;
-            lock.l_type = F_WRLCK;
-            lock.l_whence = SEEK_SET;
+    // try to lock the file if possible
+    {
+        struct flock lock;
+        lock.l_type = F_WRLCK;
+        lock.l_whence = SEEK_SET;
 
-            lock.l_start = 0;
-            lock.l_len = 0;
+        lock.l_start = 0;
+        lock.l_len = 0;
 
-            if (fcntl(config->configfd, F_SETLK, &lock)) {
-                if (errno == EACCES || errno == EAGAIN) {
-                    LOG(-1, "Another instance is probably running!\n");
-                }
-                ERR("fcntl");
-                err = -2;
-                goto error_exit;
+        if (fcntl(fd, F_SETLK, &lock)) {
+            if (errno == EACCES || errno == EAGAIN) {
+                LOG(-1, "Another instance is probably running!\n");
             }
+            ERR("fcntl");
+            return -2;
         }
-    } else {
-        lseek(config->configfd, 0, SEEK_SET);
     }
 
     {
@@ -119,21 +113,20 @@ int readconfig(const char path[], struct configInfo* config)
         const size_t buffsize = 200;
         char buff[buffsize];
 
-        lseek(config->configfd, 0, SEEK_SET);
+        lseek(fd, 0, SEEK_SET);
         while (rv > 0) {
             int i;
 
             memset_s(buff, buffsize, 0);
-            rv = read(config->configfd, &buff, buffsize);
+            rv = read(fd, &buff, buffsize);
             if (rv < 0) {
                 ERR("read");
-                err = -3;
-                goto error_exit;
+                return -3;
             }
 
             for (i = 0; i < rv; i++) {
                 if (buff[i] == '\n' || buff[i] == '\0') {
-                    lseek(config->configfd, i + 1 - rv, SEEK_CUR);
+                    lseek(fd, i + 1 - rv, SEEK_CUR);
 
                     // cleanup string
                     cleaninput(buff, i);
@@ -151,8 +144,7 @@ int readconfig(const char path[], struct configInfo* config)
 
                 if (config->minavrg.tv_sec < 0 || config->minavrg.tv_nsec < 0) {
                     LOG(-1, "The option of minavrg is malformed or out of range!\n");
-                    err = -4;
-                    goto error_exit;
+                    return -4;
                 }
 
                 LOG(1, "Minavrg set to %lds %ldns\n", config->minavrg.tv_sec, config->minavrg.tv_nsec);
@@ -163,8 +155,7 @@ int readconfig(const char path[], struct configInfo* config)
 
                 if (config->maxcount < 0) {
                     LOG(-1, "The option of maxscore is malformed or out of range!\n");
-                    err = -5;
-                    goto error_exit;
+                    return -5;
                 }
 
                 LOG(1, "Maxscore set to %ld\n", config->maxcount);
@@ -179,15 +170,13 @@ int readconfig(const char path[], struct configInfo* config)
                     if (errno == ENOENT) {
                         if (mkdir(config->logpath, 731)) {
                             ERR("mkdir");
-                            err = -6;
-                            goto error_exit;
+                            return -6;
                         }
                         LOG(0, "Created logging directory!\n");
 
                     } else {
                         ERR("stat");
-                        err = -7;
-                        goto error_exit;
+                        return -7;
                     }
 
                 } else {
@@ -196,8 +185,7 @@ int readconfig(const char path[], struct configInfo* config)
 
                     } else {
                         LOG(-1, "Logpath does not point to a directory!\n");
-                        err = -7;
-                        goto error_exit;
+                        return -8;
                     }
                 }
             } else if (strncmp_ss(buff, "usexkeymaps", 10) == 0) {
@@ -209,14 +197,10 @@ int readconfig(const char path[], struct configInfo* config)
             }
         }
     }
-
-    return err;
-
-error_exit:
-    if (close(config->configfd)) {
+    if (close(fd)) {
         ERR("close");
     }
-    return err;
+    return 0;
 }
 
 int handleargs(int argc, char* argv[], struct argInfo* data)

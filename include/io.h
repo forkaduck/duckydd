@@ -23,7 +23,6 @@ struct configInfo {
     // kbd
     bool xkeymaps;
 
-    int configfd;
     struct timespec minavrg;
 };
 
