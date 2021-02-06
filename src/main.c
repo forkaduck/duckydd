@@ -17,6 +17,7 @@
 #include <signal.h>
 #include <sys/epoll.h>
 #include <sys/resource.h>
+#include <time.h>
 #include <unistd.h>
 #include <xkbcommon/xkbcommon-x11.h>
 
@@ -72,8 +73,14 @@ static int deinit_device(struct deviceInfo* device, struct configInfo* config, s
         device->fd = -1;
 
         if (device->devlog.size != 0 && device->score >= config->maxcount) {
+            char temp[100];
+            time_t current_time = time(NULL);
+            struct tm* tm = localtime(&current_time);
+            strftime(temp, sizeof(temp), " [%c]\n", tm);
+
             LOG(2, "Writing devlog to logfile\n");
-            if (m_append_array_char(&device->devlog, "\n\0", 2)) {
+
+            if (m_append_array_char(&device->devlog, temp, strnlen_s(temp, 100))) {
                 LOG(-1, "append_mbuffer_array_char failed!\n");
             }
 
@@ -231,7 +238,7 @@ static int add_fd(struct managedBuffer* device, struct keyboardInfo* kbd, struct
         }
 
         // reset strokesdiff array
-        for(i = 0; i < m_deviceInfo(device)[fd].timediff.strokesdiff.size; i++) {
+        for (i = 0; i < m_deviceInfo(device)[fd].timediff.strokesdiff.size; i++) {
             memset_s(&m_struct_timespec(&m_deviceInfo(device)[fd].timediff.strokesdiff)[i], sizeof(struct timespec), 0);
         }
 

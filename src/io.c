@@ -115,7 +115,7 @@ int readconfig(const char path[], struct configInfo* config)
 
     {
         int rv = 1;
-   
+
         const size_t buffsize = 200;
         char buff[buffsize];
 
