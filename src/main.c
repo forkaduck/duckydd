@@ -75,8 +75,10 @@ static int deinit_device(struct deviceInfo* device, struct configInfo* config, s
         if (device->devlog.size != 0 && device->score >= config->maxcount) {
             char temp[100];
             time_t current_time = time(NULL);
-            struct tm* tm = localtime(&current_time);
-            strftime(temp, sizeof(temp), " [%c]\n", tm);
+            struct tm tm;
+
+            localtime_r(&current_time, &tm);
+            strftime(temp, sizeof(temp), " [%c]\n", &tm);
 
             LOG(2, "Writing devlog to logfile\n");
 
