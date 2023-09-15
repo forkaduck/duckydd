@@ -48,7 +48,6 @@
 // global variables
 bool g_brexit;
 bool g_reloadconfig;
-bool g_daemonize;
 short g_loglevel;
 
 static int deinit_device(struct deviceInfo *device, struct configInfo *config,
