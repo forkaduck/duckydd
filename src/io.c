@@ -136,8 +136,6 @@ int readconfig(const char path[], struct configInfo *config)
 int handleargs(int argc, char *argv[], struct argInfo *data)
 {
 	int i;
-	bool unrecognized = false;
-	bool help = false;
 	data->configpath[0] = '\0';
 
 	// Iterate through all members of the "argv" array and handle them.
@@ -150,11 +148,6 @@ int handleargs(int argc, char *argv[], struct argInfo *data)
 					strcpy_s(data->configpath, PATH_MAX,
 						 argv[i + 1]); // config path
 				}
-				break;
-
-			// Daemonize itself. Used when the init system doesn't do it.
-			case 'd':
-				g_daemonize = true;
 				break;
 
 			// Change the verbosity of program output.
@@ -179,7 +172,7 @@ int handleargs(int argc, char *argv[], struct argInfo *data)
 				       "For config options please have a look at the README.md\n"
 				       "\n",
 				       GIT_VERSION);
-				exit(0);
+				exit(EXIT_SUCCESS);
 				break;
 
 			default:
@@ -192,15 +185,16 @@ int handleargs(int argc, char *argv[], struct argInfo *data)
 	}
 
 	if (data->configpath[0] == '\0') {
-		LOG(0, "Please provide a config location! The daemon cannot run without one.\n");
-		exit(-1);
+		LOG(0,
+		    "Please provide a config location! The daemon cannot run without one.\n");
+		exit(EXIT_FAILURE);
 	}
 	return 0;
 }
 
 void _logger(short loglevel, const char func[], const char format[], ...)
 {
-	// check for a format string bigger than the max
+	// Check if the format string is bigger than the maximum allowed size.
 	if (loglevel <= g_loglevel) {
 		if (strnlen(func, MAX_SIZE_FORMAT_STRING) <=
 			    MAX_SIZE_FORMAT_STRING &&
