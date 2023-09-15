@@ -140,10 +140,11 @@ int handleargs(int argc, char *argv[], struct argInfo *data)
 	bool help = false;
 	data->configpath[0] = '\0';
 
+	// Iterate through all members of the "argv" array and handle them.
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] == '-') {
 			switch (argv[i][1]) {
-			// path to the config to be used
+			// The configuration path option.
 			case 'c':
 				if (i + 1 <= argc) {
 					strcpy_s(data->configpath, PATH_MAX,
@@ -151,12 +152,12 @@ int handleargs(int argc, char *argv[], struct argInfo *data)
 				}
 				break;
 
-			// daemonize the daemon
+			// Daemonize itself. Used when the init system doesn't do it.
 			case 'd':
 				g_daemonize = true;
 				break;
 
-			// increase the verbosity level
+			// Change the verbosity of program output.
 			case 'v':
 				if (g_loglevel < MAX_LOGLEVEL) {
 					g_loglevel++;
@@ -166,7 +167,7 @@ int handleargs(int argc, char *argv[], struct argInfo *data)
 				}
 				break;
 
-			// shows help
+			// Shows the help section.
 			case 'h':
 				printf("duckydd %s\n\n"
 				       "Usage: duckydd [Options]\n"
@@ -191,7 +192,7 @@ int handleargs(int argc, char *argv[], struct argInfo *data)
 	}
 
 	if (data->configpath[0] == '\0') {
-		LOG(0, "Please provide a config location!\n");
+		LOG(0, "Please provide a config location! The daemon cannot run without one.\n");
 		exit(-1);
 	}
 	return 0;
