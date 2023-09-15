@@ -145,7 +145,7 @@ int handleargs(int argc, char *argv[], struct argInfo *data)
 			switch (argv[i][1]) {
 			// path to the config to be used
 			case 'c':
-				if (i + 1 < argc) {
+				if (i + 1 <= argc) {
 					strcpy_s(data->configpath, PATH_MAX,
 						 argv[i + 1]); // config path
 				}
@@ -161,14 +161,14 @@ int handleargs(int argc, char *argv[], struct argInfo *data)
 				if (g_loglevel < MAX_LOGLEVEL) {
 					g_loglevel++;
 				} else {
-					LOG(0,
-					    "Can't increment loglevel any more!\n");
+					LOG(0, "The maximum loglevel is %d!\n",
+					    MAX_LOGLEVEL);
 				}
 				break;
 
 			// shows help
 			case 'h':
-				printf("duckydd %s\n"
+				printf("duckydd %s\n\n"
 				       "Usage: duckydd [Options]\n"
 				       "\t\t-c <file>\tSpecify a config file path\n"
 				       "\t\t-d\t\tDaemonize the process\n"
@@ -176,34 +176,23 @@ int handleargs(int argc, char *argv[], struct argInfo *data)
 				       "\t\t\t\tTHE -v OPTION CAN POTENTIALY EXPOSE PASSWORDS!!!\n"
 				       "\t\t-h\t\tShows this help section\n\n"
 				       "For config options please have a look at the README.md\n"
-				       "The daemon was linked against: udev "
-#ifdef ENABLE_XKB_EXTENSION
-				       "xkbcommon xkbcommon-x11 xcb "
-#endif
 				       "\n",
 				       GIT_VERSION);
-				help = true;
+				exit(0);
 				break;
 
 			default:
-				LOG(0, "%s is not a recognized option. \n",
+				LOG(0,
+				    "%s is not a recognized option. You can try the -h argument for a list of supported options.\n",
 				    argv[i]);
-				unrecognized = true;
 				break;
 			}
 		}
 	}
 
-	if (unrecognized) {
-		LOG(0,
-		    "One or more options where not recognized! You can try the -h argument for a list of supported options.\n");
-	}
-
-	if (help) {
-		return -1;
-	} else if (data->configpath[0] == '\0') {
+	if (data->configpath[0] == '\0') {
 		LOG(0, "Please provide a config location!\n");
-		return -1;
+		exit(-1);
 	}
 	return 0;
 }
