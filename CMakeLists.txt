@@ -83,7 +83,13 @@ set_target_properties(safestringlib PROPERTIES
         IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/safestringlib/build/libsafestring_static.a"
         INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/lib/safestringlib/include")
 
-add_dependencies(duckydd safestringlib safestringlib_download)
+# Add toml parser
+add_library(tomlc STATIC IMPORTED)
+set_target_properties(tomlc PROPERTIES
+        IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/tomlc99/libtoml.a"
+        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/lib/tomlc99")
+
+add_dependencies(duckydd tomlc safestringlib safestringlib_download)
 
 # Link to libraries
 target_link_libraries(duckydd 
@@ -91,6 +97,7 @@ target_link_libraries(duckydd
 		${UDEV_LIB}
         ${MATH_LIB}
 		safestringlib
+        tomlc
 )
 
 # Link to xkb specific libraries
