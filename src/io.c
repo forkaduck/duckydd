@@ -34,7 +34,7 @@ void readconfig(const char path[], struct configInfo *config)
 	// Open the config file as read-only.
 	fd_config = open(path, O_RDWR);
 	if (fd_config < 0) {
-		ERR("open");
+		STOP("open");
 	}
 
 	// Try to lock the file so that only one instance of the daemon
@@ -52,7 +52,7 @@ void readconfig(const char path[], struct configInfo *config)
 				LOG(-1,
 				    "Another instance is probably running!\n");
 			}
-			ERR("fcntl");
+			STOP("fcntl");
 		}
 	}
 
@@ -63,20 +63,20 @@ void readconfig(const char path[], struct configInfo *config)
 		// Convert the file descriptor to a FILE pointer.
 		p_config = fdopen(fd_config, "r");
 		if (!p_config) {
-			ERR("fdopen");
+			STOP("fdopen");
 		}
 
 		// Parse the configuration file and extract all values from the "config" table.
 		toml_table_t *content = toml_parse_file(p_config, err_ret_buff,
 							sizeof(err_ret_buff));
 		if (!content) {
-			ERR("toml_parse_file");
+			STOP("toml_parse_file");
 		}
 
 		const toml_table_t *config_table =
 			toml_table_in(content, "config");
 		if (!config_table) {
-			ERR("toml_table_in");
+			STOP("toml_table_in");
 		}
 
 		// Handle all possible configuration entries.
@@ -109,7 +109,7 @@ void readconfig(const char path[], struct configInfo *config)
 	}
 
 	if (close(fd_config)) {
-		ERR("close");
+		STOP("close");
 	}
 }
 

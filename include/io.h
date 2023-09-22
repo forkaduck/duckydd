@@ -13,10 +13,15 @@
 
 #define LOG(loglvl, format, args...)                                           \
 	_logger(loglvl, __func__, format, ##args) // print function name
-#define ERR(function)                                                          \
+
+#define STOP(function)                                                         \
 	_logger(-1, __func__, "%s has failed (%d) -> %s (err: %d)\n",          \
 		function, errno, strerror(errno));                             \
 	exit(EXIT_FAILURE)
+
+#define ERR(function)                                                          \
+	_logger(-1, __func__, "%s has failed (%d) -> %s (err: %d)\n",          \
+		function, errno, strerror(errno));
 
 // holds data read from the config file (mainly used by readconfig)
 struct configInfo {
