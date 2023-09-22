@@ -21,20 +21,6 @@
 #include "safe_lib.h"
 #include "toml.h"
 
-#define PREFIX long_int
-#define T long int
-#include "mbuffertemplate.h"
-
-#define PREFIX size_t
-#define T size_t
-#include "mbuffertemplate.h"
-
-#define PREFIX char
-#define T char
-#include "mbuffertemplate.h"
-
-#define MIN(i, k) (((i) < (k)) ? (i) : (k))
-
 int readconfig(const char path[], struct configInfo *config)
 {
 	int fd_config;
