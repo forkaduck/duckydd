@@ -40,19 +40,15 @@ static const char *conpath[] = {
 	"/dev/systty",	   "/dev/console", NULL
 };
 
+// Try to open every hardcoded console path and return the first one that works.
 static int open_console0()
 {
-	size_t i;
-
-	// go through some console paths
-	for (i = 0; i < conpath_size; i++) {
-		int fd;
-
-		fd = open(conpath[i], O_NOCTTY | O_RDONLY);
+	for (size_t i = 0; i < conpath_size; i++) {
+		int fd = open(conpath[i], O_NOCTTY | O_RDONLY);
 		if (fd >= 0) {
-			char ioctlarg;
+			char ioctlarg = 0;
 
-			// if it is a tty and has the right keyboard return the fd
+			// Use an old ioctl to check if the opened file descriptor is a tty and has a keyboard with type 101.
 			if (!ioctl(fd, KDGKBTYPE, &ioctlarg)) {
 				if (isatty(fd) && ioctlarg == KB_101) {
 					return fd;
@@ -62,46 +58,47 @@ static int open_console0()
 			if (close(fd)) {
 				STOP("close");
 			}
+		} else {
+			LOG(1, "Failed to open %s! Trying next one ...\n",
+			    conpath[i]);
 		}
-
-		LOG(1, "Failed to open %s! Trying next one ...\n", conpath[i]);
 	}
 
 	return -1;
 }
 
+// Load the Core Keyboard Keymap of the currently running X-Server.
 #ifdef ENABLE_XKB_EXTENSION
 static int load_x_keymaps(const char screen[], struct keyboardInfo *kbd,
 			  struct configInfo *config)
 {
 	int err = 0;
 
-	// initalize x keymap
+	// Set the x-keymap field to NULL to prevent use of an uninitialized variable.
 	kbd->x.keymap = NULL;
 
-	// create a new context
+	// Create a connection to the current X-Server.
 	kbd->x.ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
 	if (!kbd->x.ctx) {
-		LOG(-1, "xkb_context_new failed!\n");
+		ERR("xkb_context_new failed!\n");
 		err = -1;
 		goto error_exit;
 	}
 
-	// connect to the x server
 	kbd->x.con = xcb_connect(screen, NULL);
 	if (kbd->x.con == NULL) {
-		LOG(-1, "xcb_connect failed!\n");
+		ERR("xcb_connect failed!\n");
 		err = -2;
 		goto error_exit;
 	}
 
 	if (xcb_connection_has_error(kbd->x.con)) {
-		LOG(-1, "xcb_connection_has_error failed!\n");
+		ERR("xcb_connection_has_error failed!\n");
 		err = -3;
 		goto error_exit;
 	}
 
-	// setup the xkb extension
+	// Try to setup the XKB extension which is used as an easier interface to the currently attached keyboard of an X-Server.
 	{
 		uint16_t major_xkb, minor_xkb;
 		uint8_t event_out, error_out;
@@ -117,31 +114,32 @@ static int load_x_keymaps(const char screen[], struct keyboardInfo *kbd,
 		}
 	}
 
-	// get device id of the core x keyboard
+	// Get device ID of the core X-Keyboard.
 	kbd->x.device_id = xkb_x11_get_core_keyboard_device_id(kbd->x.con);
 	if (kbd->x.device_id == -1) {
-		LOG(-1, "xkb_x11_get_core_keyboard_device_id failed!\n");
+		ERR("xkb_x11_get_core_keyboard_device_id failed!\n");
 		err = -5;
 		goto error_exit;
 	}
 
-	// get keymap
+	// Retrieve the keymap of the core keyboard and save it.
 	kbd->x.keymap =
 		xkb_x11_keymap_new_from_device(kbd->x.ctx, kbd->x.con,
 					       kbd->x.device_id,
 					       XKB_KEYMAP_COMPILE_NO_FLAGS);
 	if (!kbd->x.keymap) {
-		LOG(-1, "xkb_x11_keymap_new_from_device failed!\n");
+		ERR("xkb_x11_keymap_new_from_device failed!\n");
 		err = -6;
 		goto error_exit;
 	}
 
-	return err;
+	LOG(1, "X-Server Keymap loaded!\n");
+	return 0;
 
+	// Clean up after ourselves if any call failed because XCB is noncritical.
 error_exit:
 	config->xkeymaps = false;
 
-	// get rid of unused heap space
 	if (kbd->x.keymap) {
 		xkb_keymap_unref(kbd->x.keymap);
 	}
@@ -153,12 +151,13 @@ error_exit:
 }
 #endif
 
+// Try to load the current keymap used by the kernel.
+// Most of what this function does is not very well documented so there might be holes or wrong keys.
+// The advantage is that this should work on every Linux system independent from Window Server / Manager.
 static int load_kernel_keymaps(const int fd, struct keyboardInfo *kbd)
 {
-	size_t i, k;
-
-	// load scancode to keycode table
-	for (i = 0; i < MAX_SIZE_SCANCODE; i++) {
+	// Load scancode to keycode table
+	for (size_t i = 0; i < MAX_SIZE_SCANCODE; i++) {
 		struct kbkeycode temp;
 
 		temp.scancode = i;
@@ -173,8 +172,8 @@ static int load_kernel_keymaps(const int fd, struct keyboardInfo *kbd)
 	}
 
 	// load keycode to actioncode table
-	for (i = 0; i < MAX_NR_KEYMAPS; i++) {
-		for (k = 0; k < NR_KEYS; k++) {
+	for (size_t i = 0; i < MAX_NR_KEYMAPS; i++) {
+		for (size_t k = 0; k < NR_KEYS; k++) {
 			struct kbentry temp;
 
 			temp.kb_table = i;
@@ -191,7 +190,7 @@ static int load_kernel_keymaps(const int fd, struct keyboardInfo *kbd)
 	}
 
 	// loads actioncode to string table
-	for (i = 0; i < MAX_NR_FUNC; i++) {
+	for (size_t i = 0; i < MAX_NR_FUNC; i++) {
 		struct kbsentry temp;
 
 		temp.kb_func = i;
@@ -206,6 +205,7 @@ static int load_kernel_keymaps(const int fd, struct keyboardInfo *kbd)
 			 MAX_SIZE_KBSTRING);
 	}
 
+	LOG(1, "Kernel Keymap loaded!\n");
 	return 0;
 }
 
