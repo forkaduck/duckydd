@@ -384,7 +384,7 @@ int init(char configpath[], struct udevInfo *udev, struct configInfo *config,
 	setbuf(stderr, NULL);
 
 	// init signal handler
-	if (init_signalhandler(config)) {
+	if (init_signalhandler()) {
 		LOG(-1, "init_sighandler failed\n");
 		return -1;
 	}
