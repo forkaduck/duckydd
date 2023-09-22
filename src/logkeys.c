@@ -154,9 +154,14 @@ error_exit:
 // Try to load the current keymap used by the kernel.
 // Most of what this function does is not very well documented so there might be holes or wrong keys.
 // The advantage is that this should work on every Linux system independent from Window Server / Manager.
+//
+// Scancodes are just key-up / down press events which can directly be read from the console.
+// They then have to be translated to an intermediate keycode. These keycodes are either passed to the XServer
+// and interpreted with their map or used with the actioncode table to translate them into strings which are saved
+// in the kernel keymap.
 static int load_kernel_keymaps(const int fd, struct keyboardInfo *kbd)
 {
-	// Load scancode to keycode table
+	// Retrieve all Scancode -> Keycode mappings individually.
 	for (size_t i = 0; i < MAX_SIZE_SCANCODE; i++) {
 		struct kbkeycode temp;
 
@@ -171,7 +176,7 @@ static int load_kernel_keymaps(const int fd, struct keyboardInfo *kbd)
 		kbd->k.keycode[i] = temp.keycode;
 	}
 
-	// load keycode to actioncode table
+	// Load the Keycode -> Actioncode translation table.
 	for (size_t i = 0; i < MAX_NR_KEYMAPS; i++) {
 		for (size_t k = 0; k < NR_KEYS; k++) {
 			struct kbentry temp;
@@ -189,7 +194,7 @@ static int load_kernel_keymaps(const int fd, struct keyboardInfo *kbd)
 		}
 	}
 
-	// loads actioncode to string table
+	// Gets the Actioncode -> String table.
 	for (size_t i = 0; i < MAX_NR_FUNC; i++) {
 		struct kbsentry temp;
 
