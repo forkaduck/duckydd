@@ -5,6 +5,6 @@
 void signal_handler(int signal);
 
 // registers the sighandler
-int init_signalhandler();
+void init_signalhandler();
 
 #endif

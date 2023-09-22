@@ -21,7 +21,7 @@
 #include "safe_lib.h"
 #include "toml.h"
 
-int readconfig(const char path[], struct configInfo *config)
+void readconfig(const char path[], struct configInfo *config)
 {
 	int fd_config;
 
@@ -35,7 +35,6 @@ int readconfig(const char path[], struct configInfo *config)
 	fd_config = open(path, O_RDWR);
 	if (fd_config < 0) {
 		ERR("open");
-		return -1;
 	}
 
 	// Try to lock the file so that only one instance of the daemon
@@ -54,7 +53,6 @@ int readconfig(const char path[], struct configInfo *config)
 				    "Another instance is probably running!\n");
 			}
 			ERR("fcntl");
-			return -1;
 		}
 	}
 
@@ -66,7 +64,6 @@ int readconfig(const char path[], struct configInfo *config)
 		p_config = fdopen(fd_config, "r");
 		if (!p_config) {
 			ERR("fdopen");
-			return -1;
 		}
 
 		// Parse the configuration file and extract all values from the "config" table.
@@ -74,14 +71,12 @@ int readconfig(const char path[], struct configInfo *config)
 							sizeof(err_ret_buff));
 		if (!content) {
 			ERR("toml_parse_file");
-			return -1;
 		}
 
 		const toml_table_t *config_table =
 			toml_table_in(content, "config");
 		if (!config_table) {
 			ERR("toml_table_in");
-			return -1;
 		}
 
 		// Handle all possible configuration entries.
@@ -116,10 +111,9 @@ int readconfig(const char path[], struct configInfo *config)
 	if (close(fd_config)) {
 		ERR("close");
 	}
-	return 0;
 }
 
-int handleargs(int argc, char *argv[], struct argInfo *data)
+void handleargs(int argc, char *argv[], struct argInfo *data)
 {
 	int i;
 	data->configpath[0] = '\0';
@@ -175,7 +169,6 @@ int handleargs(int argc, char *argv[], struct argInfo *data)
 		    "Please provide a config location! The daemon cannot run without one.\n");
 		exit(EXIT_FAILURE);
 	}
-	return 0;
 }
 
 void _logger(short loglevel, const char func[], const char format[], ...)

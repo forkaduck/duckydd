@@ -374,20 +374,14 @@ int init(char configpath[], struct udevInfo *udev, struct configInfo *config,
 	m_init(device, sizeof(struct deviceInfo));
 
 	// read config
-	if (readconfig(configpath, config)) {
-		LOG(-1, "readconfig failed\n");
-		return -1;
-	}
+	readconfig(configpath, config);
 
 	// set 0 and -1 to non buffering
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 
 	// init signal handler
-	if (init_signalhandler()) {
-		LOG(-1, "init_sighandler failed\n");
-		return -1;
-	}
+	init_signalhandler();
 
 	// init the udev monitor
 	if (init_udev(udev)) {
@@ -450,10 +444,7 @@ int main(int argc, char *argv[])
 	g_loglevel = 0;
 
 	// interpret args
-	if (handleargs(argc, argv, &arg)) {
-		LOG(-1, "handleargs failed!\n");
-		return -1;
-	}
+	handleargs(argc, argv, &arg);
 
 	// initalize the daemon contexts
 	if (init(arg.configpath, &udev, &config, &kbd, &device, &epollfd,

@@ -15,7 +15,8 @@
 	_logger(loglvl, __func__, format, ##args) // print function name
 #define ERR(function)                                                          \
 	_logger(-1, __func__, "%s has failed (%d) -> %s (err: %d)\n",          \
-		function, errno, strerror(errno))
+		function, errno, strerror(errno));                             \
+	exit(EXIT_FAILURE)
 
 // holds data read from the config file (mainly used by readconfig)
 struct configInfo {
@@ -34,8 +35,8 @@ struct argInfo {
 	char configpath[PATH_MAX];
 };
 
-int readconfig(const char path[], struct configInfo *data);
-int handleargs(int argc, char *argv[], struct argInfo *data);
+void readconfig(const char path[], struct configInfo *data);
+void handleargs(int argc, char *argv[], struct argInfo *data);
 
 // internal logger function
 char *binexpand(uint8_t bin, size_t size);
